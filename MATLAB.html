@@ -1,0 +1,2966 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<title>MATLAB 闯关冒险</title>
+<style>
+/* Fonts loaded via link tags in head to avoid blocking */
+
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--orange:#FF6600;--orange-glow:#FF660066;--cyan:#00E5FF;--cyan-glow:#00E5FF44;
+--bg:#0A0A12;--bg2:#12121F;--bg3:#1A1A2E;--surface:#16162A;--surface2:#1E1E38;
+--text:#E8E8F0;--text2:#9090B0;--green:#00FF88;--red:#FF3366;--purple:#AA66FF;
+--gold:#FFD700;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Noto Sans SC','Fira Code',monospace}
+canvas#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* ===== SCREEN SYSTEM ===== */
+.screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10;display:none;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .5s}
+.screen.active{display:flex;opacity:1}
+
+/* ===== SPLASH ===== */
+#splash{background:radial-gradient(ellipse at center,#1a1a3e 0%,#0a0a12 70%);z-index:10000}
+.splash-title{font-family:'Orbitron',monospace;font-size:clamp(2rem,6vw,5rem);font-weight:900;background:linear-gradient(135deg,var(--orange),var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 60px var(--orange-glow);letter-spacing:.1em;animation:titlePulse 3s infinite}
+.splash-sub{font-size:clamp(.9rem,2vw,1.4rem);color:var(--text2);margin:1rem 0 2.5rem;letter-spacing:.3em;font-weight:300}
+@keyframes titlePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+.btn{font-family:'Orbitron',monospace;font-size:1rem;padding:.8rem 2.5rem;border:2px solid var(--orange);background:transparent;color:var(--orange);cursor:pointer;letter-spacing:.15em;position:relative;overflow:hidden;transition:all .3s;text-transform:uppercase;border-radius:4px;z-index:10001}
+.btn:hover{background:var(--orange);color:#000;box-shadow:0 0 30px var(--orange-glow),inset 0 0 30px #ffffff22}
+.btn-cyan{border-color:var(--cyan);color:var(--cyan)}
+.btn-cyan:hover{background:var(--cyan);color:#000;box-shadow:0 0 30px var(--cyan-glow)}
+.btn-green{border-color:var(--green);color:var(--green)}
+.btn-green:hover{background:var(--green);color:#000;box-shadow:0 0 30px #00ff8844}
+.btn-sm{font-size:.75rem;padding:.5rem 1.2rem}
+
+/* ===== HUB WORLD ===== */
+#hub{background:var(--bg)}
+.hub-header{position:absolute;top:0;left:0;right:0;padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;z-index:20;background:linear-gradient(to bottom,#0a0a12ee,transparent)}
+.hub-stats{display:flex;gap:1.5rem;align-items:center;font-family:'Orbitron',monospace;font-size:.85rem}
+.stat{display:flex;align-items:center;gap:.4rem}
+.stat .icon{font-size:1.1rem}
+.stat .val{color:var(--gold);font-weight:700}
+.hub-title{font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--orange);letter-spacing:.2em}
+
+.hub-scene{width:100%;height:100%;perspective:1200px;display:flex;align-items:center;justify-content:center}
+.hub-ring{position:relative;width:700px;height:700px;transform-style:preserve-3d;animation:hubSpin 40s linear infinite}
+@keyframes hubSpin{from{transform:rotateX(-15deg) rotateY(0deg)}to{transform:rotateX(-15deg) rotateY(360deg)}}
+.hub-ring:hover{animation-play-state:paused}
+
+.portal{position:absolute;width:140px;height:160px;left:50%;top:50%;cursor:pointer;transform-style:preserve-3d;transition:all .4s cubic-bezier(.25,.46,.45,.94)}
+.portal:hover{transform:translate(-50%,-50%) translateZ(40px) scale(1.12)}
+.portal-inner{width:100%;height:100%;background:var(--surface);border:1px solid #ffffff15;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;gap:.6rem;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
+.portal-inner::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange)}
+.portal.locked .portal-inner{opacity:.4;filter:grayscale(.8)}
+.portal.locked .portal-inner::before{background:var(--text2)}
+.portal-icon{font-size:2.2rem;filter:drop-shadow(0 0 10px var(--orange-glow))}
+.portal-name{font-family:'Noto Sans SC';font-size:.8rem;font-weight:700;text-align:center;color:var(--text)}
+.portal-stars{display:flex;gap:2px;font-size:.75rem}
+.portal-stars .star{color:#333}
+.portal-stars .star.earned{color:var(--gold)}
+.portal .lock-icon{position:absolute;font-size:1.5rem;color:var(--text2)}
+
+/* ===== GAME SCREENS ===== */
+.game-screen{background:var(--bg);flex-direction:column}
+.game-header{width:100%;padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-bottom:1px solid #ffffff0a;flex-shrink:0}
+.game-header-left{display:flex;align-items:center;gap:1rem}
+.back-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:1.3rem;padding:.3rem;transition:color .2s}
+.back-btn:hover{color:var(--orange)}
+.game-title{font-family:'Orbitron';font-size:.9rem;color:var(--orange);letter-spacing:.15em}
+.game-header-right{display:flex;gap:1.5rem;align-items:center;font-family:'Orbitron';font-size:.8rem}
+.game-score{color:var(--gold)}
+.game-lives{color:var(--red)}
+.game-timer{color:var(--cyan)}
+.game-body{flex:1;width:100%;overflow:auto;display:flex;align-items:center;justify-content:center;padding:1.5rem;position:relative}
+.game-footer{width:100%;padding:.8rem 1.5rem;display:flex;justify-content:center;gap:1rem;background:var(--surface);border-top:1px solid #ffffff0a;flex-shrink:0}
+
+/* ===== MEMORY CARD GAME ===== */
+.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:700px;width:100%}
+.mem-card{aspect-ratio:3/4;perspective:800px;cursor:pointer}
+.mem-card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.mem-card.flipped .mem-card-inner,.mem-card.matched .mem-card-inner{transform:rotateY(180deg)}
+.mem-card-front,.mem-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:.7rem;text-align:center}
+.mem-card-front{background:linear-gradient(145deg,var(--surface),var(--surface2));border:1px solid var(--orange);font-family:'Orbitron';font-size:1.8rem;color:var(--orange)}
+.mem-card-front::after{content:'M';font-size:2rem;opacity:.3}
+.mem-card-back{transform:rotateY(180deg);border:1px solid #ffffff22}
+.mem-card-back.type-func{background:linear-gradient(145deg,#1a2a1a,#0d1f0d);border-color:var(--green);font-family:'Fira Code';font-size:clamp(.65rem,1.5vw,.9rem);color:var(--green);font-weight:700}
+.mem-card-back.type-desc{background:linear-gradient(145deg,#2a1a1a,#1f0d0d);border-color:var(--orange);font-size:clamp(.6rem,1.3vw,.8rem);color:var(--text);line-height:1.4}
+.mem-card.matched{opacity:.5;pointer-events:none}
+.mem-card.matched .mem-card-inner{transform:rotateY(180deg) scale(.95)}
+
+/* ===== CODE BUILDER ===== */
+.codebuilder-wrap{display:flex;gap:2rem;width:100%;max-width:900px;flex-wrap:wrap;justify-content:center}
+.cb-task{width:100%;background:var(--surface);border:1px solid var(--cyan);border-radius:8px;padding:1rem 1.2rem;margin-bottom:.5rem}
+.cb-task-label{font-size:.7rem;color:var(--cyan);font-family:'Orbitron';letter-spacing:.15em;margin-bottom:.4rem}
+.cb-task-desc{font-size:.9rem;line-height:1.5;color:var(--text)}
+.cb-dropzone{flex:1;min-width:300px;min-height:300px;background:var(--surface);border:2px dashed #ffffff15;border-radius:8px;padding:.8rem;display:flex;flex-direction:column;gap:6px;transition:border-color .2s}
+.cb-dropzone.over{border-color:var(--orange)}
+.cb-source{flex:1;min-width:250px;display:flex;flex-direction:column;gap:6px;padding:.8rem}
+.cb-block{font-family:'Fira Code';font-size:.8rem;padding:.7rem 1rem;background:var(--bg3);border:1px solid #ffffff15;border-radius:6px;cursor:grab;user-select:none;transition:all .2s;color:var(--text);line-height:1.4}
+.cb-block:hover{border-color:var(--orange);background:var(--surface2)}
+.cb-block.dragging{opacity:.4;transform:scale(.95)}
+.cb-block.correct{border-color:var(--green);background:#00ff8810}
+.cb-block.wrong{border-color:var(--red);background:#ff336610;animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ===== BUG HUNTER ===== */
+.bughunter-wrap{max-width:750px;width:100%}
+.bh-desc{background:var(--surface);border-left:3px solid var(--red);padding:1rem;margin-bottom:1rem;border-radius:0 8px 8px 0;font-size:.85rem;color:var(--text2);line-height:1.5}
+.bh-editor{background:#0d0d1a;border:1px solid #ffffff10;border-radius:8px;overflow:hidden}
+.bh-editor-header{background:var(--surface);padding:.5rem 1rem;display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--text2)}
+.bh-editor-header .dot{width:8px;height:8px;border-radius:50%}
+.bh-line{display:flex;align-items:flex-start;padding:.3rem 0;cursor:pointer;transition:background .15s;border-left:3px solid transparent}
+.bh-line:hover{background:#ffffff06}
+.bh-line.selected{background:#ff336615;border-left-color:var(--red)}
+.bh-line.correct-bug{background:#00ff8815;border-left-color:var(--green)}
+.bh-line.missed-bug{background:#ff660020;border-left-color:var(--orange)}
+.bh-linenum{width:40px;text-align:right;padding-right:12px;color:#555;font-family:'Fira Code';font-size:.8rem;user-select:none;flex-shrink:0}
+.bh-code{font-family:'Fira Code';font-size:.8rem;color:var(--text);white-space:pre;line-height:1.6}
+.bh-lines{padding:.5rem 0}
+
+/* ===== MATRIX ARENA ===== */
+.matrix-wrap{display:flex;flex-direction:column;align-items:center;gap:1.5rem;max-width:800px;width:100%}
+.matrix-display{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;justify-content:center}
+.matrix-grid{display:inline-grid;gap:2px;background:var(--surface);border:2px solid var(--cyan);border-radius:6px;padding:8px}
+.matrix-cell{width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-family:'Fira Code';font-size:1rem;font-weight:700;color:var(--cyan);background:var(--bg2);border-radius:4px}
+.matrix-op{font-family:'Orbitron';font-size:1.5rem;color:var(--orange);padding:0 .5rem}
+.matrix-eq{font-family:'Orbitron';font-size:1.5rem;color:var(--text2)}
+.matrix-input-grid{display:inline-grid;gap:2px;background:var(--surface);border:2px solid var(--orange);border-radius:6px;padding:8px}
+.matrix-input-cell{width:48px;height:48px;background:var(--bg);border:1px solid #ffffff15;border-radius:4px;color:var(--orange);font-family:'Fira Code';font-size:1rem;font-weight:700;text-align:center;outline:none}
+.matrix-input-cell:focus{border-color:var(--orange);box-shadow:0 0 8px var(--orange-glow)}
+.matrix-question{font-size:.9rem;color:var(--text2);text-align:center;line-height:1.5}
+
+/* ===== SPEED TYPING ===== */
+.terminal-wrap{max-width:700px;width:100%;background:#0a0a0f;border:1px solid #ffffff10;border-radius:8px;overflow:hidden;font-family:'Fira Code'}
+.terminal-header{background:var(--surface);padding:.5rem 1rem;display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--text2)}
+.terminal-body{padding:1rem;min-height:300px;max-height:500px;overflow-y:auto}
+.terminal-line{margin-bottom:.3rem;font-size:.85rem;line-height:1.5}
+.terminal-prompt{color:var(--green)}
+.terminal-output{color:var(--text2)}
+.terminal-error{color:var(--red)}
+.terminal-task{color:var(--cyan);font-size:.8rem;margin-bottom:.5rem;padding:.5rem;background:#00e5ff08;border-left:2px solid var(--cyan)}
+.terminal-input-line{display:flex;align-items:center;gap:.5rem}
+.terminal-input-line .prompt-symbol{color:var(--green);font-size:.85rem}
+.terminal-input{flex:1;background:none;border:none;color:var(--text);font-family:'Fira Code';font-size:.85rem;outline:none;caret-color:var(--orange)}
+
+/* ===== PLOT DETECTIVE ===== */
+.plot-wrap{display:flex;gap:1.5rem;max-width:900px;width:100%;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.plot-canvas-wrap{flex:1;min-width:300px;background:var(--surface);border:1px solid #ffffff10;border-radius:8px;padding:1rem;display:flex;flex-direction:column;align-items:center}
+.plot-canvas-wrap canvas{width:100%;max-width:400px;aspect-ratio:4/3;border-radius:4px;background:#0d0d1a}
+.plot-options{flex:1;min-width:280px;display:flex;flex-direction:column;gap:.6rem}
+.plot-option{font-family:'Fira Code';font-size:.75rem;padding:.8rem 1rem;background:var(--surface);border:1px solid #ffffff15;border-radius:8px;cursor:pointer;transition:all .2s;color:var(--text);white-space:pre-wrap;line-height:1.5}
+.plot-option:hover{border-color:var(--orange);background:var(--surface2)}
+.plot-option.correct{border-color:var(--green);background:#00ff8815}
+.plot-option.wrong{border-color:var(--red);background:#ff336615}
+
+/* ===== MAZE ===== */
+.maze-container{width:100%;height:100%;position:relative;overflow:hidden}
+.maze-viewport{width:100%;height:100%;perspective:600px;display:flex;align-items:center;justify-content:center}
+.maze-grid-wrap{transform-style:preserve-3d;transform:rotateX(55deg) rotateZ(0deg);transition:transform .3s}
+.maze-grid{display:grid;gap:0;position:relative}
+.maze-cell{width:40px;height:40px;position:relative;border:1px solid #ffffff08}
+.maze-cell.wall{background:linear-gradient(145deg,#1a1a2e,#0d0d1a);border-color:#ffffff04;box-shadow:inset 0 0 10px #00000066}
+.maze-cell.path{background:#12122044}
+.maze-cell.player{background:var(--orange);box-shadow:0 0 20px var(--orange-glow);border-radius:4px;z-index:5}
+.maze-cell.question-cell{background:#00e5ff15;border-color:var(--cyan);display:flex;align-items:center;justify-content:center;font-family:'Orbitron';font-size:.9rem;color:var(--cyan);text-shadow:0 0 8px var(--cyan-glow);animation:glowPulse 2s infinite}
+.maze-cell.exit{background:var(--green);box-shadow:0 0 20px #00ff8844;border-radius:4px}
+.maze-cell.visited{background:#ff660008}
+.maze-question-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;background:var(--surface);border:2px solid var(--cyan);border-radius:12px;padding:1.5rem;max-width:450px;width:90%;box-shadow:0 0 60px #00000088,0 0 0 9999px #00000088}
+.maze-question-popup h3{font-family:'Orbitron';font-size:.85rem;color:var(--cyan);margin-bottom:.8rem}
+.maze-question-popup pre{font-family:'Fira Code';font-size:.8rem;background:var(--bg);padding:.8rem;border-radius:6px;margin-bottom:1rem;color:var(--text);overflow-x:auto}
+.maze-question-popup .mq-options{display:flex;flex-direction:column;gap:.5rem}
+.maze-question-popup .mq-opt{padding:.6rem .8rem;background:var(--bg2);border:1px solid #ffffff15;border-radius:6px;cursor:pointer;font-family:'Fira Code';font-size:.8rem;transition:all .15s}
+.maze-question-popup .mq-opt:hover{border-color:var(--orange)}
+
+/* ===== OUTPUT PREDICT (New Mode 8) ===== */
+.output-wrap{max-width:700px;width:100%}
+.output-code-box{background:#0d0d1a;border:1px solid #ffffff10;border-radius:8px;overflow:hidden;margin-bottom:1.5rem}
+.output-code-header{background:var(--surface);padding:.5rem 1rem;display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--text2)}
+.output-code-body{padding:1rem;font-family:'Fira Code';font-size:.85rem;line-height:1.6;color:var(--text);white-space:pre-wrap}
+.output-input-area{display:flex;flex-direction:column;gap:.8rem}
+.output-label{font-size:.75rem;color:var(--cyan);font-family:'Orbitron';letter-spacing:.1em}
+.output-textarea{width:100%;min-height:80px;background:var(--bg2);border:2px solid #ffffff15;border-radius:8px;padding:.8rem;font-family:'Fira Code';font-size:.85rem;color:var(--text);resize:vertical;outline:none;transition:border-color .2s}
+.output-textarea:focus{border-color:var(--orange)}
+.output-expected{margin-top:.5rem;padding:.8rem;background:#00ff8810;border:1px solid var(--green);border-radius:6px;font-family:'Fira Code';font-size:.85rem;color:var(--green);white-space:pre-wrap;display:none}
+.output-expected.wrong-bg{background:#ff336610;border-color:var(--red);color:var(--red)}
+
+/* ===== FILL BLANKS (New Mode 9) ===== */
+.fill-wrap{max-width:750px;width:100%}
+.fill-desc{background:var(--surface);border-left:3px solid var(--purple);padding:1rem;margin-bottom:1rem;border-radius:0 8px 8px 0;font-size:.85rem;color:var(--text2);line-height:1.5}
+.fill-code-box{background:#0d0d1a;border:1px solid #ffffff10;border-radius:8px;overflow:hidden;margin-bottom:1rem}
+.fill-code-body{padding:1rem;font-family:'Fira Code';font-size:.85rem;line-height:2;color:var(--text)}
+.fill-blank{display:inline-block;min-width:80px;border-bottom:2px dashed var(--orange);padding:2px 6px;margin:0 2px;background:var(--bg2);font-family:'Fira Code';font-size:.85rem;color:var(--orange);outline:none;text-align:center;transition:all .2s;border-radius:3px 3px 0 0}
+.fill-blank:focus{border-bottom-color:var(--cyan);background:var(--bg3)}
+.fill-blank.correct{border-bottom-color:var(--green);color:var(--green);background:#00ff8810}
+.fill-blank.wrong{border-bottom-color:var(--red);color:var(--red);background:#ff336610}
+
+/* ===== RESULT OVERLAY ===== */
+.result-overlay{position:fixed;inset:0;z-index:80;background:#0a0a12ee;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;backdrop-filter:blur(10px)}
+.result-overlay.active{display:flex}
+.result-stars{font-size:3rem;display:flex;gap:.5rem}
+.result-stars .star{color:#333;transition:all .3s}
+.result-stars .star.earned{color:var(--gold);text-shadow:0 0 20px #ffd70066;animation:starPop .5s cubic-bezier(.17,.67,.29,1.53)}
+@keyframes starPop{0%{transform:scale(0) rotate(-30deg)}100%{transform:scale(1) rotate(0)}}
+.result-score{font-family:'Orbitron';font-size:2rem;color:var(--orange)}
+.result-msg{font-size:1rem;color:var(--text2);text-align:center;max-width:400px}
+
+/* ===== PARTICLES ===== */
+.particle{position:fixed;pointer-events:none;z-index:90;border-radius:50%;animation:particleFly 1s forwards}
+@keyframes particleFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--orange)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .hub-ring{width:500px;height:500px}
+  .portal{width:100px;height:120px}
+  .portal-icon{font-size:1.5rem}
+  .portal-name{font-size:.65rem}
+  .memory-grid{grid-template-columns:repeat(4,1fr);gap:8px;max-width:500px}
+  .matrix-cell,.matrix-input-cell{width:36px;height:36px;font-size:.8rem}
+  .codebuilder-wrap{flex-direction:column}
+  .plot-wrap{flex-direction:column}
+}
+@media(max-width:500px){
+  .hub-ring{width:360px;height:360px}
+  .portal{width:80px;height:95px}
+  .portal-icon{font-size:1.2rem}
+  .portal-name{font-size:.55rem}
+  .memory-grid{grid-template-columns:repeat(3,1fr)}
+}
+
+/* ===== SCANLINE OVERLAY ===== */
+body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none !important;background:repeating-linear-gradient(0deg,transparent,transparent 2px,#00000008 2px,#00000008 4px);opacity:.3;touch-action:none}
+
+/* ===== GLOW PULSE FOR ACTIVE ELEMENTS ===== */
+@keyframes glowPulse{0%,100%{box-shadow:0 0 5px var(--orange-glow)}50%{box-shadow:0 0 20px var(--orange-glow),0 0 40px #ff660022}}
+.portal:not(.locked) .portal-inner{animation:glowPulse 3s infinite}
+
+/* ===== UNLOCK REQUIREMENT LABELS ===== */
+.portal.locked .portal-inner::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 5px,#ffffff03 5px,#ffffff03 10px)}
+
+/* ===== CODE SYNTAX HIGHLIGHTING HELPERS ===== */
+.kw{color:var(--cyan)}
+.fn{color:var(--green)}
+.str{color:var(--gold)}
+.num{color:var(--orange)}
+.cmt{color:#666;font-style:italic}
+
+/* ===== MOBILE CONTROLS ===== */
+.mobile-controls{position:absolute;bottom:1.5rem;right:1.5rem;display:grid;grid-template-columns:repeat(3,50px);grid-template-rows:repeat(3,50px);gap:4px;z-index:30}
+.mobile-controls button{background:var(--surface);border:1px solid var(--orange);color:var(--orange);font-size:1.2rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;transition:all .15s}
+.mobile-controls button:active{background:var(--orange);color:#000;opacity:1}
+@media(min-width:769px){.mobile-controls{display:grid;opacity:.5}}
+@media(min-width:769px){.mobile-controls:hover{opacity:1}}
+
+/* ===== MODE PICKER OVERLAY ===== */
+.mode-picker-overlay{position:fixed;inset:0;z-index:10001;background:#000000cc;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.mode-picker-overlay.active{opacity:1;pointer-events:auto}
+.mode-picker-box{background:var(--surface);border:2px solid var(--orange);border-radius:16px;padding:2rem;max-width:400px;width:90%;text-align:center}
+.mode-picker-title{font-family:'Orbitron';font-size:1.1rem;color:var(--orange);margin-bottom:.3rem}
+.mode-picker-sub{font-size:.8rem;color:var(--text2);margin-bottom:1.5rem}
+.mode-picker-btns{display:flex;flex-direction:column;gap:.8rem}
+.mode-pick-btn{padding:1rem;background:var(--bg2);border:1px solid #ffffff15;border-radius:10px;cursor:pointer;transition:all .2s;text-align:left}
+.mode-pick-btn:hover{border-color:var(--cyan);background:var(--bg3)}
+.mode-pick-btn .mpb-title{font-family:'Orbitron';font-size:.85rem;margin-bottom:.2rem}
+.mode-pick-btn .mpb-desc{font-size:.7rem;color:var(--text2);line-height:1.4}
+.mode-pick-btn.pick-normal .mpb-title{color:var(--cyan)}
+.mode-pick-btn.pick-endless .mpb-title{color:var(--gold)}
+.mode-pick-back{margin-top:1rem;font-size:.75rem;color:var(--text2);cursor:pointer;border:none;background:none;font-family:inherit}
+.mode-pick-back:hover{color:var(--text)}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+
+<!-- SPLASH SCREEN -->
+<div id="splash" class="screen active">
+  <div class="splash-title">MATLAB</div>
+  <div class="splash-sub">闯 关 冒 险</div>
+  <button class="btn" onclick="startGame()">启 动 系 统</button>
+</div>
+
+<!-- HUB WORLD -->
+<div id="hub" class="screen">
+  <div class="hub-header">
+    <div class="hub-title">&#9670; 任务大厅 &#9670;</div>
+    <div class="hub-stats">
+      <div class="stat"><span class="icon">&#9733;</span><span class="val" id="totalStars">0</span><span>/27</span></div>
+      <div class="stat"><span class="icon">&#9670;</span><span class="val" id="totalScore">0</span></div>
+    </div>
+  </div>
+  <div class="hub-scene">
+    <div class="hub-ring" id="hubRing"></div>
+  </div>
+</div>
+
+<!-- GAME SCREENS (dynamically populated) -->
+<div id="gameMemory" class="screen game-screen"></div>
+<div id="gameCodeBuilder" class="screen game-screen"></div>
+<div id="gameBugHunter" class="screen game-screen"></div>
+<div id="gameMatrix" class="screen game-screen"></div>
+<div id="gameTerminal" class="screen game-screen"></div>
+<div id="gamePlot" class="screen game-screen"></div>
+<div id="gameMaze" class="screen game-screen"></div>
+<div id="gameOutput" class="screen game-screen"></div>
+<div id="gameFill" class="screen game-screen"></div>
+<div id="gameEndless" class="screen game-screen"></div>
+
+<!-- MODE PICKER OVERLAY -->
+<div class="mode-picker-overlay" id="modePicker"></div>
+
+<!-- RESULT OVERLAY -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-stars" id="resultStars"></div>
+  <div class="result-score" id="resultScore"></div>
+  <div class="result-msg" id="resultMsg"></div>
+  <div style="display:flex;gap:1rem;margin-top:1rem">
+    <button class="btn btn-sm" onclick="goHub()">返回大厅</button>
+    <button class="btn btn-sm btn-cyan" onclick="replayMode()">再来一次</button>
+  </div>
+</div>
+
+<script>
+// ===================== AUDIO ENGINE =====================
+const AudioEngine = {
+  ctx: null,
+  init() {
+    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  },
+  play(type) {
+    try {
+      if (!this.ctx) this.init();
+      if (!this.ctx) return;
+      const c = this.ctx, now = c.currentTime;
+      if (c.state === 'suspended') c.resume();
+      const o = c.createOscillator(), g = c.createGain();
+      o.connect(g); g.connect(c.destination);
+      const presets = {
+        click: { f: 800, d: .08, t: 'sine' },
+        correct: { f: 523, d: .15, t: 'sine', f2: 659 },
+        wrong: { f: 200, d: .2, t: 'sawtooth' },
+        flip: { f: 1200, d: .06, t: 'sine' },
+        star: { f: 880, d: .3, t: 'sine', f2: 1318 },
+        type: { f: 600 + Math.random() * 400, d: .03, t: 'square' },
+        complete: { f: 523, d: .5, t: 'sine' },
+      };
+      const p = presets[type] || presets.click;
+      o.type = p.t; o.frequency.setValueAtTime(p.f, now);
+      if (p.f2) o.frequency.linearRampToValueAtTime(p.f2, now + p.d);
+      g.gain.setValueAtTime(.15, now);
+      g.gain.exponentialRampToValueAtTime(.001, now + p.d);
+      o.start(now); o.stop(now + p.d);
+    } catch(e) {}
+  }
+};
+
+// ===================== BACKGROUND PARTICLES =====================
+const bgCanvas = document.getElementById('bgCanvas');
+const bgCtx = bgCanvas.getContext('2d');
+let bgParticles = [];
+function initBg() {
+  bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
+  bgParticles = Array.from({length: 80}, () => ({
+    x: Math.random() * bgCanvas.width, y: Math.random() * bgCanvas.height,
+    vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3,
+    r: Math.random() * 1.5 + .5, a: Math.random() * .5 + .1
+  }));
+}
+function drawBg() {
+  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+  bgParticles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = bgCanvas.width; if (p.x > bgCanvas.width) p.x = 0;
+    if (p.y < 0) p.y = bgCanvas.height; if (p.y > bgCanvas.height) p.y = 0;
+    bgCtx.beginPath(); bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(255,102,0,${p.a})`; bgCtx.fill();
+  });
+  for (let i = 0; i < bgParticles.length; i++) {
+    for (let j = i + 1; j < bgParticles.length; j++) {
+      const dx = bgParticles[i].x - bgParticles[j].x;
+      const dy = bgParticles[i].y - bgParticles[j].y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 120) {
+        bgCtx.beginPath();
+        bgCtx.moveTo(bgParticles[i].x, bgParticles[i].y);
+        bgCtx.lineTo(bgParticles[j].x, bgParticles[j].y);
+        bgCtx.strokeStyle = `rgba(255,102,0,${.05 * (1 - d / 120)})`;
+        bgCtx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawBg);
+}
+initBg(); drawBg();
+window.addEventListener('resize', initBg);
+
+// ===================== CELEBRATION PARTICLES =====================
+function spawnParticles(x, y, color = '#FF6600', count = 12) {
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (Math.PI * 2 / count) * i;
+    const dist = 40 + Math.random() * 60;
+    p.style.cssText = `left:${x}px;top:${y}px;width:6px;height:6px;background:${color};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
+
+// ===================== STATE MANAGEMENT =====================
+let state = {
+  totalScore: 0,
+  stars: { memory:0, codebuilder:0, bughunter:0, matrix:0, terminal:0, plot:0, maze:0, output:0, fill:0, endless:0 },
+  unlocked: ['memory', 'bughunter', 'maze', 'codebuilder', 'endless'],
+  currentMode: null
+};
+
+function saveState() {
+  localStorage.setItem('matlab_adventure_v2', JSON.stringify(state));
+  const starsEl = document.getElementById('totalStars');
+  const scoreEl = document.getElementById('totalScore');
+  if (starsEl) starsEl.textContent = Object.values(state.stars).reduce((a, b) => a + b, 0);
+  if (scoreEl) scoreEl.textContent = state.totalScore;
+}
+function loadState() {
+  const s = localStorage.getItem('matlab_adventure_v2');
+  if (s) { try { const parsed = JSON.parse(s); Object.assign(state, parsed); } catch(e){} }
+  // Ensure new modes exist in stars
+  if (!state.stars.output) state.stars.output = 0;
+  if (!state.stars.fill) state.stars.fill = 0;
+  checkUnlocks();
+  saveState();
+}
+function checkUnlocks() {
+  const total = Object.values(state.stars).reduce((a, b) => a + b, 0);
+  if (!state.unlocked.includes('codebuilder')) state.unlocked.push('codebuilder');
+  if (total >= 2 && !state.unlocked.includes('matrix')) state.unlocked.push('matrix');
+  if (total >= 3 && !state.unlocked.includes('output')) state.unlocked.push('output');
+  if (total >= 4 && !state.unlocked.includes('terminal')) state.unlocked.push('terminal');
+  if (total >= 5 && !state.unlocked.includes('fill')) state.unlocked.push('fill');
+  if (total >= 6 && !state.unlocked.includes('plot')) state.unlocked.push('plot');
+  if (!state.unlocked.includes('endless')) state.unlocked.push('endless');
+}
+
+// ===================== SCREEN MANAGEMENT =====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame() {
+  AudioEngine.init();
+  AudioEngine.play('click');
+  showScreen('hub');
+  loadState();
+  buildHub();
+}
+
+function goHub() {
+  AudioEngine.play('click');
+  state.currentMode = null;
+  document.getElementById('resultOverlay').classList.remove('active');
+  checkUnlocks();
+  saveState();
+  buildHub();
+  showScreen('hub');
+}
+
+let lastMode = null;
+function replayMode() {
+  AudioEngine.play('click');
+  document.getElementById('resultOverlay').classList.remove('active');
+  if (lastMode) launchMode(lastMode);
+}
+
+// ===================== HUB WORLD =====================
+const modes = [
+  { id: 'memory', name: '函数记忆翻牌', icon: '🃏', screen: 'gameMemory' },
+  { id: 'codebuilder', name: '代码拼装', icon: '🧩', screen: 'gameCodeBuilder' },
+  { id: 'bughunter', name: 'Bug猎人', icon: '🐛', screen: 'gameBugHunter' },
+  { id: 'matrix', name: '矩阵竞技场', icon: '🔢', screen: 'gameMatrix' },
+  { id: 'output', name: '输出预测', icon: '🔮', screen: 'gameOutput' },
+  { id: 'terminal', name: '极速终端', icon: '⌨️', screen: 'gameTerminal' },
+  { id: 'fill', name: '代码填空', icon: '✏️', screen: 'gameFill' },
+  { id: 'plot', name: '图形侦探', icon: '📊', screen: 'gamePlot' },
+  { id: 'maze', name: '代码迷宫', icon: '🏗️', screen: 'gameMaze' },
+  { id: 'endless', name: '无尽模式', icon: '♾️', screen: 'gameEndless' },
+];
+
+function buildHub() {
+  const ring = document.getElementById('hubRing');
+  ring.innerHTML = '';
+  const n = modes.length;
+  const radius = Math.min(window.innerWidth, window.innerHeight) * .28;
+  modes.forEach((m, i) => {
+    const angle = (2 * Math.PI / n) * i - Math.PI / 2;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const portal = document.createElement('div');
+    const locked = !state.unlocked.includes(m.id);
+    const unlockReqs = { matrix: 2, output: 3, terminal: 4, fill: 5, plot: 6 };
+    const reqText = unlockReqs[m.id] ? `需要 ${unlockReqs[m.id]} 颗星解锁` : '';
+    portal.className = `portal${locked ? ' locked' : ''}`;
+    portal.style.transform = `translate(-50%,-50%) translateX(${x}px) translateZ(${z}px) rotateY(${-((360/n)*i)}deg)`;
+    const stars = [0,1,2].map(s => `<span class="star${s < state.stars[m.id] ? ' earned' : ''}">★</span>`).join('');
+    portal.innerHTML = `<div class="portal-inner">
+      <div class="portal-icon">${m.icon}</div>
+      <div class="portal-name">${m.name}</div>
+      <div class="portal-stars">${stars}</div>
+      ${locked ? `<div class="lock-icon">🔒</div><div style="position:absolute;bottom:6px;font-size:.5rem;color:var(--text2)">${reqText}</div>` : ''}
+    </div>`;
+    if (!locked) {
+      portal.addEventListener('click', () => { AudioEngine.play('click'); launchMode(m.id); });
+    }
+    ring.appendChild(portal);
+  });
+}
+
+function launchMode(id) {
+  lastMode = id;
+  state.currentMode = id;
+  // Modes that support endless sub-mode
+  const endlessModes = ['terminal', 'output', 'fill', 'bughunter', 'matrix', 'codebuilder', 'plot', 'maze'];
+  if (endlessModes.includes(id)) {
+    showModePicker(id);
+  } else {
+    doLaunchMode(id, false);
+  }
+}
+
+function showModePicker(id) {
+  const m = modes.find(m => m.id === id);
+  const picker = document.getElementById('modePicker');
+  picker.innerHTML = `<div class="mode-picker-box">
+    <div class="mode-picker-title">${m.icon} ${m.name}</div>
+    <div class="mode-picker-sub">选择游戏模式</div>
+    <div class="mode-picker-btns">
+      <div class="mode-pick-btn pick-normal" id="pickNormal">
+        <div class="mpb-title">闯关模式</div>
+        <div class="mpb-desc">固定题量，完成后获得星级评价</div>
+      </div>
+      <div class="mode-pick-btn pick-endless" id="pickEndless">
+        <div class="mpb-title">♾️ 无尽模式</div>
+        <div class="mpb-desc">无限出题，连续答对加分，挑战最高连击</div>
+      </div>
+    </div>
+    <button class="mode-pick-back" id="pickBack">返回大厅</button>
+  </div>`;
+  picker.classList.add('active');
+  document.getElementById('pickNormal').addEventListener('click', () => {
+    AudioEngine.play('click');
+    picker.classList.remove('active');
+    doLaunchMode(id, false);
+  });
+  document.getElementById('pickEndless').addEventListener('click', () => {
+    AudioEngine.play('click');
+    picker.classList.remove('active');
+    doLaunchMode(id, true);
+  });
+  document.getElementById('pickBack').addEventListener('click', () => {
+    AudioEngine.play('click');
+    picker.classList.remove('active');
+    state.currentMode = null;
+  });
+}
+
+function doLaunchMode(id, endless) {
+  if (endless) {
+    initModeEndless(id);
+    return;
+  }
+  switch(id) {
+    case 'memory': initMemory(); break;
+    case 'codebuilder': initCodeBuilder(); break;
+    case 'bughunter': initBugHunter(); break;
+    case 'matrix': initMatrix(); break;
+    case 'terminal': initTerminal(); break;
+    case 'plot': initPlot(); break;
+    case 'maze': initMaze(); break;
+    case 'output': initOutput(); break;
+    case 'fill': initFill(); break;
+    case 'endless': initEndless(); break;
+  }
+}
+
+function showResult(modeId, score, maxScore) {
+  const pct = score / maxScore;
+  const stars = pct >= .9 ? 3 : pct >= .6 ? 2 : pct >= .3 ? 1 : 0;
+  if (stars > state.stars[modeId]) state.stars[modeId] = stars;
+  state.totalScore += score;
+  saveState();
+  const msgs = ['继续努力！', '初窥门径', '渐入佳境！', '大师级表现！'];
+  document.getElementById('resultStars').innerHTML = [0,1,2].map((s,i) =>
+    `<span class="star${i < stars ? ' earned' : ''}" style="animation-delay:${i*.2}s">${i < stars ? '★' : '☆'}</span>`
+  ).join('');
+  document.getElementById('resultScore').textContent = `${score} / ${maxScore}`;
+  document.getElementById('resultMsg').textContent = msgs[stars];
+  setTimeout(() => {
+    document.getElementById('resultOverlay').classList.add('active');
+    if (stars > 0) AudioEngine.play('star');
+  }, 300);
+}
+
+function makeGameHeader(title, screenId, extraHtml = '') {
+  return `<div class="game-header">
+    <div class="game-header-left">
+      <button class="back-btn" onclick="goHub()">◂</button>
+      <div class="game-title">${title}</div>
+    </div>
+    <div class="game-header-right">${extraHtml}</div>
+  </div>`;
+}
+
+// ===================== MODE 1: MEMORY CARD FLIP =====================
+const memoryData = [
+  { func: 'linspace(a,b,n)', desc: '生成从a到b的n个等距点' },
+  { func: 'meshgrid(x,y)', desc: '生成二维网格坐标矩阵' },
+  { func: 'zeros(m,n)', desc: '创建m×n全零矩阵' },
+  { func: 'ones(m,n)', desc: '创建m×n全一矩阵' },
+  { func: 'eye(n)', desc: '创建n阶单位矩阵' },
+  { func: 'rand(m,n)', desc: '生成m×n均匀随机矩阵' },
+  { func: 'diag(v)', desc: '以向量v创建对角矩阵' },
+  { func: 'size(A)', desc: '返回矩阵A的行列数' },
+  { func: 'length(v)', desc: '返回向量最大维度长度' },
+  { func: 'reshape(A,m,n)', desc: '将矩阵A重塑为m×n' },
+  { func: "transpose(A) / A'", desc: '矩阵转置操作' },
+  { func: 'inv(A)', desc: '求矩阵A的逆矩阵' },
+  { func: 'det(A)', desc: '计算矩阵A的行列式' },
+  { func: 'eig(A)', desc: '求矩阵特征值和特征向量' },
+  { func: 'fft(x)', desc: '快速傅里叶变换' },
+  { func: 'conv(a,b)', desc: '向量卷积运算' },
+  { func: 'find(条件)', desc: '查找满足条件的索引' },
+  { func: 'sort(v)', desc: '对向量升序排列' },
+  { func: 'max(A)', desc: '返回最大值(及索引)' },
+  { func: 'sum(A)', desc: '求和(按列或全部)' },
+];
+
+function initMemory() {
+  const screen = document.getElementById('gameMemory');
+  const pairs = shuffle([...memoryData]).slice(0, 6);
+  let cards = [];
+  pairs.forEach(p => {
+    cards.push({ type: 'func', text: p.func, pairId: p.func });
+    cards.push({ type: 'desc', text: p.desc, pairId: p.func });
+  });
+  cards = shuffle(cards);
+  let flipped = [], matched = 0, flips = 0, score = 0;
+  const maxPairs = pairs.length;
+
+  screen.innerHTML = makeGameHeader('函数记忆翻牌', 'gameMemory',
+    `<span class="game-score">配对: <span id="memMatched">0</span>/${maxPairs}</span>
+     <span class="game-timer">翻牌: <span id="memFlips">0</span></span>`
+  ) + `<div class="game-body"><div class="memory-grid" id="memGrid"></div></div>`;
+
+  const grid = document.getElementById('memGrid');
+  cards.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'mem-card';
+    card.dataset.idx = i;
+    card.innerHTML = `<div class="mem-card-inner">
+      <div class="mem-card-front"></div>
+      <div class="mem-card-back type-${c.type}">${escHtml(c.text)}</div>
+    </div>`;
+    card.addEventListener('click', () => {
+      if (flipped.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+      AudioEngine.play('flip');
+      card.classList.add('flipped');
+      flipped.push({ el: card, data: c });
+      flips++;
+      document.getElementById('memFlips').textContent = flips;
+      if (flipped.length === 2) {
+        setTimeout(() => {
+          if (flipped[0].data.pairId === flipped[1].data.pairId && flipped[0].data.type !== flipped[1].data.type) {
+            flipped.forEach(f => f.el.classList.add('matched'));
+            AudioEngine.play('correct');
+            matched++;
+            score += Math.max(10, 30 - flips);
+            const rect = flipped[0].el.getBoundingClientRect();
+            spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, '#00FF88');
+            document.getElementById('memMatched').textContent = matched;
+            if (matched === maxPairs) {
+              setTimeout(() => showResult('memory', score, maxPairs * 30), 600);
+            }
+          } else {
+            AudioEngine.play('wrong');
+            flipped.forEach(f => f.el.classList.remove('flipped'));
+          }
+          flipped = [];
+        }, 800);
+      }
+    });
+    grid.appendChild(card);
+  });
+  showScreen('gameMemory');
+}
+
+// ===================== MODE 2: CODE BUILDER =====================
+const codeBuilderData = [
+  {
+    task: '创建一个 for 循环，计算 1 到 10 的累加和，并输出结果',
+    lines: ['total = 0;', 'for i = 1:10', '    total = total + i;', 'end', 'disp(total);'],
+    explain: 'for 循环从 1 遍历到 10，每次把 i 累加到 total 上。最终 total = 55。disp() 用于在命令窗口显示结果。',
+    shuffled: null
+  },
+  {
+    task: '生成 0 到 2pi 的正弦曲线并绘图，添加标题和标签',
+    lines: ['x = linspace(0, 2*pi, 100);', 'y = sin(x);', 'plot(x, y);', "title('Sine Wave');", "xlabel('x'); ylabel('sin(x)');"],
+    explain: 'linspace 生成等间距向量，sin 计算正弦值，plot 画线图。title/xlabel/ylabel 分别设置标题和坐标轴标签，注意顺序：先生成数据再画图再添加标注。',
+    shuffled: null
+  },
+  {
+    task: '定义一个函数，接受半径 r，返回圆的面积',
+    lines: ['function area = circleArea(r)', '    area = pi * r^2;', 'end'],
+    explain: 'MATLAB 函数以 function 开头，格式为 function 输出 = 函数名(输入)。pi 是内置常量。函数体以 end 结束。',
+    shuffled: null
+  },
+  {
+    task: '用 while 循环找到第一个大于 1000 的 2 的幂次',
+    lines: ['n = 1;', 'while n <= 1000', '    n = n * 2;', 'end', 'disp(n);'],
+    explain: 'while 循环在条件为 true 时重复执行。每次 n 翻倍（1→2→4→...→512→1024），当 n=1024 > 1000 时退出循环并显示。',
+    shuffled: null
+  },
+  {
+    task: '读取矩阵 A 的第 2 行第 3 列元素，以及第 1 行所有元素',
+    lines: ['A = [1 2 3; 4 5 6; 7 8 9];', 'element = A(2, 3);', 'firstRow = A(1, :);', 'disp(element);', 'disp(firstRow);'],
+    explain: 'A(行, 列) 访问单个元素，冒号 : 表示"所有"。A(2,3)=6，A(1,:)=[1 2 3]。注意 MATLAB 索引从 1 开始。',
+    shuffled: null
+  },
+  {
+    task: '使用 switch-case 判断成绩等级 (A/B/C/D)',
+    lines: ["grade = 'B';", 'switch grade', "    case 'A'", "        disp('优秀');", "    case 'B'", "        disp('良好');", '    otherwise', "        disp('继续努力');", 'end'],
+    explain: 'switch 根据变量值匹配 case 分支。otherwise 处理所有未匹配的情况，类似 C 语言的 default。注意每个 case 不需要 break。',
+    shuffled: null
+  },
+  {
+    task: '创建两个子图：左边画 sin(x)，右边画 cos(x)',
+    lines: ['x = linspace(0, 2*pi, 100);', 'subplot(1,2,1);', 'plot(x, sin(x));', "title('sin(x)');", 'subplot(1,2,2);', 'plot(x, cos(x));', "title('cos(x)');"],
+    explain: 'subplot(行数, 列数, 位置) 在一个窗口创建多个子图。subplot(1,2,1) 表示1行2列的第1个位置。每个子图后紧跟它的 plot 和 title。',
+    shuffled: null
+  },
+  {
+    task: '使用 try-catch 安全地计算矩阵的逆',
+    lines: ['A = [1 2; 3 4];', 'try', '    B = inv(A);', '    disp(B);', 'catch ME', "    disp('矩阵不可逆');", '    disp(ME.message);', 'end'],
+    explain: 'try-catch 用于异常处理。try 块中的代码如果出错，程序不会崩溃而是跳转到 catch 块。ME 是 MException 对象，包含错误信息。',
+    shuffled: null
+  },
+];
+
+function initCodeBuilder() {
+  const screen = document.getElementById('gameCodeBuilder');
+  const challenges = shuffle([...codeBuilderData]).slice(0, 4);
+  let currentQ = 0, score = 0;
+
+  function renderCB() {
+    const ch = challenges[currentQ];
+    const shuffledLines = ch.shuffled || shuffle([...ch.lines]);
+    ch.shuffled = shuffledLines;
+    screen.innerHTML = makeGameHeader('代码拼装', 'gameCodeBuilder',
+      `<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`
+    ) + `<div class="game-body">
+      <div class="codebuilder-wrap">
+        <div class="cb-task"><div class="cb-task-label">▸ 任务描述</div><div class="cb-task-desc">${ch.task}</div></div>
+        <div style="display:flex;gap:1.5rem;width:100%;flex-wrap:wrap">
+          <div style="flex:1;min-width:280px">
+            <div style="font-size:.7rem;color:var(--green);font-family:Orbitron;letter-spacing:.1em;margin-bottom:.5rem">▾ 拼装区（按正确顺序排列）</div>
+            <div class="cb-dropzone" id="cbDrop"></div>
+          </div>
+          <div style="flex:1;min-width:220px">
+            <div style="font-size:.7rem;color:var(--text2);font-family:Orbitron;letter-spacing:.1em;margin-bottom:.5rem">▾ 代码块（点击移动）</div>
+            <div class="cb-source" id="cbSource"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="game-footer">
+      <button class="btn btn-sm btn-cyan" onclick="checkCodeBuilder()">提交验证</button>
+      <button class="btn btn-sm" onclick="resetCodeBuilder()">重置</button>
+    </div>`;
+
+    const source = document.getElementById('cbSource');
+    const drop = document.getElementById('cbDrop');
+
+    shuffledLines.forEach((line, i) => {
+      const block = createDraggableBlock(line, i);
+      source.appendChild(block);
+    });
+
+    setupDropZone(drop, source);
+    showScreen('gameCodeBuilder');
+  }
+
+  function createDraggableBlock(text, idx) {
+    const block = document.createElement('div');
+    block.className = 'cb-block';
+    block.draggable = true;
+    block.textContent = text;
+    block.dataset.idx = idx;
+    block.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', idx);
+      block.classList.add('dragging');
+    });
+    block.addEventListener('dragend', () => block.classList.remove('dragging'));
+    block.addEventListener('click', () => {
+      const drop = document.getElementById('cbDrop');
+      const source = document.getElementById('cbSource');
+      if (block.parentElement === source) {
+        drop.appendChild(block);
+      } else {
+        source.appendChild(block);
+      }
+      AudioEngine.play('click');
+    });
+    return block;
+  }
+
+  function setupDropZone(drop, source) {
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault();
+      drop.classList.remove('over');
+      const idx = e.dataTransfer.getData('text/plain');
+      const block = document.querySelector(`.cb-block[data-idx="${idx}"]`);
+      if (block) { drop.appendChild(block); AudioEngine.play('click'); }
+    });
+  }
+
+  window.checkCodeBuilder = () => {
+    const drop = document.getElementById('cbDrop');
+    const blocks = drop.querySelectorAll('.cb-block');
+    const ch = challenges[currentQ];
+    const userOrder = Array.from(blocks).map(b => b.textContent);
+    let correct = true;
+    blocks.forEach((b, i) => {
+      if (b.textContent === ch.lines[i]) {
+        b.classList.add('correct');
+      } else {
+        b.classList.add('wrong');
+        correct = false;
+      }
+    });
+    if (userOrder.length !== ch.lines.length) correct = false;
+    if (correct) {
+      AudioEngine.play('correct');
+      score += 25;
+      spawnParticles(window.innerWidth/2, window.innerHeight/2, '#00FF88', 20);
+    } else {
+      AudioEngine.play('wrong');
+    }
+    // Show correct order + explanation, then wait for user click
+    const wrap = screen.querySelector('.codebuilder-wrap');
+    if (!correct) {
+      const correctBox = document.createElement('div');
+      correctBox.style.cssText = 'width:100%;margin-top:1rem;padding:1rem;background:#00ff8808;border:1px solid var(--green);border-radius:8px';
+      correctBox.innerHTML = `<div style="font-size:.7rem;color:var(--green);font-family:Orbitron;letter-spacing:.1em;margin-bottom:.5rem">▾ 正确顺序</div>` +
+        ch.lines.map((l,i) => `<div style="font-family:'Fira Code';font-size:.8rem;color:var(--text);padding:.3rem .5rem;background:var(--bg2);border-radius:4px;margin-bottom:3px"><span style="color:var(--green);margin-right:.5rem">${i+1}.</span>${escHtml(l)}</div>`).join('');
+      wrap.appendChild(correctBox);
+    }
+    const explainBox = document.createElement('div');
+    explainBox.style.cssText = 'width:100%;margin-top:.8rem;padding:1rem;background:#ff660015;border-left:3px solid var(--orange);border-radius:0 8px 8px 0;font-size:.8rem;color:var(--text);line-height:1.6';
+    explainBox.textContent = '💡 ' + ch.explain;
+    wrap.appendChild(explainBox);
+    // Replace footer with "next" button
+    const footer = screen.querySelector('.game-footer');
+    const isLast = currentQ + 1 >= challenges.length;
+    footer.innerHTML = `<button class="btn btn-sm btn-cyan" id="cbNext">${isLast ? '查看成绩' : '下一题 ▸'}</button>`;
+    document.getElementById('cbNext').addEventListener('click', () => {
+      AudioEngine.play('click');
+      currentQ++;
+      if (currentQ < challenges.length) {
+        renderCB();
+      } else {
+        showResult('codebuilder', score, challenges.length * 25);
+      }
+    });
+  };
+
+  window.resetCodeBuilder = () => {
+    const ch = challenges[currentQ];
+    ch.shuffled = shuffle([...ch.lines]);
+    renderCB();
+  };
+
+  renderCB();
+}
+
+// ===================== MODE 3: BUG HUNTER =====================
+const bugHunterData = [
+  {
+    desc: '此代码尝试计算向量元素的平均值，但有bug。找出有错误的行！',
+    code: ['v = [3, 7, 1, 9, 4];', 'total = 0;', 'for i = 0:length(v)', '    total = total + v(i);', 'end', 'avg = total / length(v);', 'disp(avg);'],
+    bugs: [2, 3],
+    explain: 'MATLAB 索引从 1 开始！应为 i = 1:length(v)，对应 v(i) 才不会越界。'
+  },
+  {
+    desc: '此代码想绘制 cos 曲线，但运行会报错。找出bug！',
+    code: ['x = linspace(0, 2*pi, 50);', 'y = cos[x];', 'plot(x, y)', 'title("Cosine")'],
+    bugs: [1],
+    explain: '函数调用用圆括号 cos(x)，不是方括号 cos[x]。'
+  },
+  {
+    desc: '这段代码想实现矩阵乘法，但结果不对。找bug！',
+    code: ['A = [1 2; 3 4];', 'B = [5 6; 7 8];', 'C = A .* B;', 'disp(C);'],
+    bugs: [2],
+    explain: '.* 是逐元素乘法，矩阵乘法应使用 A * B。'
+  },
+  {
+    desc: '此代码想把矩阵 A 转置后存入 B，但写法有误。',
+    code: ['A = [1 2 3; 4 5 6];', 'B = transpose[A];', 'disp(B);'],
+    bugs: [1],
+    explain: "函数用圆括号调用：B = transpose(A); 或 B = A';"
+  },
+  {
+    desc: '此代码尝试用 if-else 判断奇偶，但逻辑有误。',
+    code: ['n = 7;', 'if mod(n, 2) = 0', "    disp('偶数');", 'else', "    disp('奇数');", 'end'],
+    bugs: [1],
+    explain: '比较应使用 == 而非 =。正确：if mod(n, 2) == 0'
+  },
+  {
+    desc: '此代码想生成 3x3 单位矩阵并取对角线，但有错误。',
+    code: ['I = eye(3, 1);', 'd = diag(I);', 'disp(d);'],
+    bugs: [0],
+    explain: 'eye(3,1) 生成 3x1 矩阵，不是单位矩阵。应为 eye(3) 或 eye(3,3)。'
+  },
+  {
+    desc: '此代码想将字符串拼接并显示，但写法有问题。',
+    code: ['name = "MATLAB";', 'ver = 2024;', 'msg = name + " R" + ver;', 'disp(msg);'],
+    bugs: [2],
+    explain: '数字不能直接与字符串用 + 拼接。应使用 num2str(ver) 或 string(ver)。'
+  },
+  {
+    desc: '此代码想创建元胞数组并访问内容，但语法有误。',
+    code: ["C = {1, 'hello', [1 2 3]};", 'x = C(3);', 'disp(x(2));'],
+    bugs: [1, 2],
+    explain: 'C(3) 返回元胞，应用 C{3} 获取内容。x(2) 前需先正确提取数组。'
+  },
+  {
+    desc: '此代码想生成一个行向量并纵向拼接，但操作有误。',
+    code: ['a = [1 2 3];', 'b = [4 5 6];', 'c = [a; b;]', 'd = c(:, 4);', 'disp(d);'],
+    bugs: [3],
+    explain: 'c 只有3列，c(:,4) 超出索引范围。应为 c(:,3) 或检查尺寸。'
+  },
+];
+
+function initBugHunter() {
+  const screen = document.getElementById('gameBugHunter');
+  const challenges = shuffle([...bugHunterData]).slice(0, 5);
+  let currentQ = 0, score = 0;
+
+  function renderBH() {
+    const ch = challenges[currentQ];
+    const selected = new Set();
+    screen.innerHTML = makeGameHeader('Bug猎人', 'gameBugHunter',
+      `<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`
+    ) + `<div class="game-body">
+      <div class="bughunter-wrap">
+        <div class="bh-desc">🐛 ${ch.desc}</div>
+        <div class="bh-editor">
+          <div class="bh-editor-header">
+            <span class="dot" style="background:#ff5f57"></span>
+            <span class="dot" style="background:#ffbd2e"></span>
+            <span class="dot" style="background:#28ca41"></span>
+            <span style="margin-left:.5rem">buggy_code.m</span>
+          </div>
+          <div class="bh-lines" id="bhLines"></div>
+        </div>
+      </div>
+    </div>
+    <div class="game-footer">
+      <button class="btn btn-sm btn-cyan" id="bhSubmit">提交（点击选中有bug的行）</button>
+    </div>`;
+
+    const linesEl = document.getElementById('bhLines');
+    ch.code.forEach((line, i) => {
+      const lineEl = document.createElement('div');
+      lineEl.className = 'bh-line';
+      lineEl.innerHTML = `<span class="bh-linenum">${i+1}</span><span class="bh-code">${escHtml(line)}</span>`;
+      lineEl.addEventListener('click', () => {
+        AudioEngine.play('click');
+        if (selected.has(i)) { selected.delete(i); lineEl.classList.remove('selected'); }
+        else { selected.add(i); lineEl.classList.add('selected'); }
+      });
+      linesEl.appendChild(lineEl);
+    });
+
+    document.getElementById('bhSubmit').addEventListener('click', () => {
+      const lines = linesEl.querySelectorAll('.bh-line');
+      let correct = true;
+      ch.bugs.forEach(b => {
+        if (!selected.has(b)) { correct = false; lines[b].classList.add('missed-bug'); }
+        else { lines[b].classList.add('correct-bug'); lines[b].classList.remove('selected'); }
+      });
+      selected.forEach(s => {
+        if (!ch.bugs.includes(s)) { correct = false; }
+      });
+      if (correct) {
+        AudioEngine.play('correct');
+        score += 20;
+        spawnParticles(window.innerWidth/2, window.innerHeight/2, '#00FF88', 15);
+      } else {
+        AudioEngine.play('wrong');
+        ch.bugs.forEach(b => lines[b].classList.add('correct-bug'));
+      }
+      // Disable further clicks on lines
+      linesEl.querySelectorAll('.bh-line').forEach(l => l.style.pointerEvents = 'none');
+      // Show explanation
+      const wrap = screen.querySelector('.bughunter-wrap');
+      const exp = document.createElement('div');
+      exp.style.cssText = 'margin-top:1rem;padding:1rem;background:#ff660015;border-left:3px solid var(--orange);border-radius:0 8px 8px 0;font-size:.8rem;color:var(--text);line-height:1.5';
+      exp.textContent = '💡 ' + ch.explain;
+      wrap.appendChild(exp);
+      // Replace footer with "next" button
+      const footer = screen.querySelector('.game-footer');
+      const isLast = currentQ + 1 >= challenges.length;
+      footer.innerHTML = `<button class="btn btn-sm btn-cyan" id="bhNext">${isLast ? '查看成绩' : '下一题 ▸'}</button>`;
+      document.getElementById('bhNext').addEventListener('click', () => {
+        AudioEngine.play('click');
+        currentQ++;
+        if (currentQ < challenges.length) renderBH();
+        else showResult('bughunter', score, challenges.length * 20);
+      });
+    });
+
+    showScreen('gameBugHunter');
+  }
+  renderBH();
+}
+
+// ===================== MODE 4: MATRIX ARENA =====================
+function initMatrix() {
+  const screen = document.getElementById('gameMatrix');
+  const challenges = generateMatrixChallenges();
+  let currentQ = 0, score = 0;
+
+  function renderMatrix() {
+    const ch = challenges[currentQ];
+    screen.innerHTML = makeGameHeader('矩阵竞技场', 'gameMatrix',
+      `<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`
+    ) + `<div class="game-body">
+      <div class="matrix-wrap">
+        <div class="matrix-question">${ch.question}</div>
+        <div class="matrix-display" id="matDisplay"></div>
+        <div id="matInputArea"></div>
+      </div>
+    </div>
+    <div class="game-footer">
+      <button class="btn btn-sm btn-cyan" id="matSubmit">提交答案</button>
+    </div>`;
+
+    const display = document.getElementById('matDisplay');
+    const inputArea = document.getElementById('matInputArea');
+
+    if (ch.matA) display.appendChild(renderMatrixGrid(ch.matA, 'var(--cyan)'));
+    if (ch.op) { const op = document.createElement('span'); op.className='matrix-op'; op.textContent=ch.op; display.appendChild(op); }
+    if (ch.matB) display.appendChild(renderMatrixGrid(ch.matB, 'var(--purple)'));
+    if (ch.matA || ch.matB) { const eq = document.createElement('span'); eq.className='matrix-eq'; eq.textContent='='; display.appendChild(eq); }
+
+    if (ch.answerType === 'matrix') {
+      const rows = ch.answer.length, cols = ch.answer[0].length;
+      const grid = document.createElement('div');
+      grid.className = 'matrix-input-grid';
+      grid.style.gridTemplateColumns = `repeat(${cols}, 48px)`;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const inp = document.createElement('input');
+          inp.className = 'matrix-input-cell';
+          inp.type = 'number';
+          inp.dataset.r = r;
+          inp.dataset.c = c;
+          grid.appendChild(inp);
+        }
+      }
+      inputArea.appendChild(grid);
+    } else {
+      const inp = document.createElement('input');
+      inp.className = 'matrix-input-cell';
+      inp.type = 'number';
+      inp.id = 'matScalarInput';
+      inp.style.cssText = 'width:80px;height:50px;font-size:1.2rem;margin:0 auto;display:block';
+      inputArea.appendChild(inp);
+    }
+
+    document.getElementById('matSubmit').addEventListener('click', () => {
+      let correct = true;
+      if (ch.answerType === 'matrix') {
+        const inputs = inputArea.querySelectorAll('.matrix-input-cell');
+        inputs.forEach(inp => {
+          const r = +inp.dataset.r, c = +inp.dataset.c;
+          if (+inp.value !== ch.answer[r][c]) { correct = false; inp.style.borderColor = 'var(--red)'; }
+          else { inp.style.borderColor = 'var(--green)'; }
+          inp.disabled = true;
+        });
+      } else {
+        const inp = document.getElementById('matScalarInput');
+        const v = +inp.value;
+        if (v !== ch.answer) { correct = false; inp.style.borderColor = 'var(--red)'; }
+        else { inp.style.borderColor = 'var(--green)'; }
+        inp.disabled = true;
+      }
+      if (correct) { AudioEngine.play('correct'); score += 20; spawnParticles(window.innerWidth/2, window.innerHeight/2, '#00FF88'); }
+      else AudioEngine.play('wrong');
+      // Show correct answer if wrong
+      const wrap = screen.querySelector('.matrix-wrap');
+      if (!correct) {
+        const ansBox = document.createElement('div');
+        ansBox.style.cssText = 'margin-top:.8rem;padding:.8rem;background:#00ff8808;border:1px solid var(--green);border-radius:6px;font-family:"Fira Code";font-size:.85rem;color:var(--green);text-align:center';
+        if (ch.answerType === 'matrix') {
+          ansBox.textContent = '正确答案: [' + ch.answer.map(r => r.join(' ')).join('; ') + ']';
+        } else {
+          ansBox.textContent = '正确答案: ' + ch.answer;
+        }
+        wrap.appendChild(ansBox);
+      }
+      // Show explanation
+      if (ch.explain) {
+        const exp = document.createElement('div');
+        exp.style.cssText = 'margin-top:.5rem;padding:.8rem;background:#ff660015;border-left:3px solid var(--orange);border-radius:0 8px 8px 0;font-size:.8rem;color:var(--text);line-height:1.5';
+        exp.textContent = '💡 ' + ch.explain;
+        wrap.appendChild(exp);
+      }
+      // Replace footer with "next" button
+      const footer = screen.querySelector('.game-footer');
+      const isLast = currentQ + 1 >= challenges.length;
+      footer.innerHTML = `<button class="btn btn-sm btn-cyan" id="matNext">${isLast ? '查看成绩' : '下一题 ▸'}</button>`;
+      document.getElementById('matNext').addEventListener('click', () => {
+        AudioEngine.play('click');
+        currentQ++;
+        if (currentQ < challenges.length) renderMatrix();
+        else showResult('matrix', score, challenges.length * 20);
+      });
+    });
+
+    showScreen('gameMatrix');
+  }
+
+  function renderMatrixGrid(mat, color) {
+    const rows = mat.length, cols = mat[0].length;
+    const grid = document.createElement('div');
+    grid.className = 'matrix-grid';
+    grid.style.gridTemplateColumns = `repeat(${cols}, 48px)`;
+    mat.forEach(row => row.forEach(v => {
+      const cell = document.createElement('div');
+      cell.className = 'matrix-cell';
+      cell.style.color = color;
+      cell.textContent = v;
+      grid.appendChild(cell);
+    }));
+    return grid;
+  }
+
+  renderMatrix();
+}
+
+function generateMatrixChallenges() {
+  const ch = [];
+  const a1 = [[1,2,3],[4,5,6]];
+  ch.push({ question: "求矩阵 A 的转置 A'", matA: a1, op: null, matB: null, answerType: 'matrix', answer: [[1,4],[2,5],[3,6]], explain: "转置将行变列：原第1行 [1,2,3] 变成第1列 [1;2;3]，原第2行 [4,5,6] 变成第2列 [4;5;6]。" });
+  const a2 = [[1,2],[3,4]], b2 = [[5,6],[7,8]];
+  ch.push({ question: '计算 A + B', matA: a2, op: '+', matB: b2, answerType: 'matrix', answer: [[6,8],[10,12]], explain: "矩阵加法是对应位置元素相加：1+5=6, 2+6=8, 3+7=10, 4+8=12。" });
+  const a3 = [[1,2],[3,4]], b3 = [[2,0],[1,3]];
+  ch.push({ question: '计算矩阵乘法 A * B', matA: a3, op: '×', matB: b3, answerType: 'matrix', answer: [[4,6],[10,12]], explain: "矩阵乘法：C(i,j) = 第i行 · 第j列。如 C(1,1)=1×2+2×1=4, C(1,2)=1×0+2×3=6。" });
+  const a4 = [[2,3],[4,1]], b4 = [[1,2],[3,5]];
+  ch.push({ question: '计算逐元素乘法 A .* B', matA: a4, op: '.*', matB: b4, answerType: 'matrix', answer: [[2,6],[12,5]], explain: ".* 是逐元素相乘（不是矩阵乘法）：2×1=2, 3×2=6, 4×3=12, 1×5=5。" });
+  const a5 = [[3,1],[2,4]];
+  ch.push({ question: '计算 det(A) 行列式的值', matA: a5, op: null, matB: null, answerType: 'scalar', answer: 10, explain: "2×2矩阵行列式 = a*d - b*c = 3×4 - 1×2 = 10。" });
+  const a6 = [[10,20,30],[40,50,60],[70,80,90]];
+  ch.push({ question: 'A(2,3) 的值是？（MATLAB从1开始索引）', matA: a6, op: null, matB: null, answerType: 'scalar', answer: 60, explain: "A(2,3) = 第2行第3列 = 60。MATLAB 索引从1开始，不像 C/Python 从0开始。" });
+  const a7 = [[1,2],[3,4]];
+  ch.push({ question: '计算 2 * A', matA: a7, op: null, matB: null, answerType: 'matrix', answer: [[2,4],[6,8]], explain: "标量乘矩阵：每个元素都乘以2。1→2, 2→4, 3→6, 4→8。" });
+  const a8 = [[5,3],[1,7]], b8 = [[2,1],[4,3]];
+  ch.push({ question: '计算 A - B', matA: a8, op: '-', matB: b8, answerType: 'matrix', answer: [[3,2],[-3,4]], explain: "矩阵减法是对应位置元素相减：5-2=3, 3-1=2, 1-4=-3, 7-3=4。" });
+  return shuffle(ch).slice(0, 5);
+}
+
+// ===================== MODE 5: SPEED TYPING CONSOLE =====================
+const terminalTasks = [
+  // --- 矩阵创建 ---
+  { prompt: '创建一个 3x3 的全零矩阵', answer: 'zeros(3,3)', alt: ['zeros(3, 3)', 'zeros(3)'], explain: 'zeros(m,n) 创建 m×n 的全零矩阵，zeros(n) 创建 n×n 方阵' },
+  { prompt: '创建 4 阶单位矩阵', answer: 'eye(4)', alt: ['eye(4,4)', 'eye(4, 4)'], explain: 'eye(n) 生成 n 阶单位矩阵（对角线为1）' },
+  { prompt: '创建一个 2x5 的全1矩阵', answer: 'ones(2,5)', alt: ['ones(2, 5)'], explain: 'ones(m,n) 创建 m×n 的全1矩阵' },
+  { prompt: '生成 2x5 的均匀随机矩阵', answer: 'rand(2,5)', alt: ['rand(2, 5)'], explain: 'rand(m,n) 生成 [0,1) 区间的均匀分布随机数' },
+  { prompt: '生成 3x3 的标准正态分布随机矩阵', answer: 'randn(3,3)', alt: ['randn(3, 3)', 'randn(3)'], explain: 'randn(m,n) 生成均值0、标准差1的正态分布随机数' },
+  { prompt: '创建一个 3 阶魔方阵', answer: 'magic(3)', alt: [], explain: 'magic(n) 创建 n 阶魔方阵，每行每列及对角线元素之和相等' },
+  { prompt: '创建一个 4x4 的对角矩阵，对角线为 [1 2 3 4]', answer: 'diag([1 2 3 4])', alt: ['diag([1,2,3,4])'], explain: 'diag(v) 用向量 v 创建对角矩阵，diag(A) 提取矩阵对角线' },
+  { prompt: '生成从 1 到 10 的行向量', answer: '1:10', alt: ['1:1:10'], explain: '起始:步长:终止，默认步长为1' },
+  { prompt: '生成从 0 到 1 步长为 0.2 的向量', answer: '0:0.2:1', alt: [], explain: '起始:步长:终止，生成 [0 0.2 0.4 0.6 0.8 1]' },
+
+  // --- 向量/数组生成 ---
+  { prompt: '生成 1 到 100 的等距50个点', answer: 'linspace(1,100,50)', alt: ['linspace(1, 100, 50)'], explain: 'linspace(起始, 终止, 点数)，含两端' },
+  { prompt: '生成 10^1 到 10^5 的5个对数等距点', answer: 'logspace(1,5,5)', alt: ['logspace(1, 5, 5)'], explain: 'logspace(a,b,n) 生成 10^a 到 10^b 的 n 个对数等距点' },
+
+  // --- 矩阵运算 ---
+  { prompt: '计算矩阵 A 的行列式', answer: 'det(A)', alt: [], explain: 'det() 计算方阵的行列式值' },
+  { prompt: '计算矩阵 A 的逆', answer: 'inv(A)', alt: [], explain: 'inv() 求逆矩阵，要求矩阵可逆(非奇异)' },
+  { prompt: '求矩阵 A 的特征值', answer: 'eig(A)', alt: [], explain: 'eig() 返回特征值，[V,D]=eig(A) 还可获取特征向量' },
+  { prompt: '求矩阵 A 的秩', answer: 'rank(A)', alt: [], explain: 'rank() 返回矩阵的秩（线性无关行/列的最大数量）' },
+  { prompt: '求矩阵 A 的迹（对角线元素之和）', answer: 'trace(A)', alt: [], explain: 'trace() 返回方阵主对角线元素之和' },
+  { prompt: '对矩阵 A 进行转置', answer: "A'", alt: ['transpose(A)', "A.'"], explain: "A' 是共轭转置，A.' 是普通转置，实数矩阵二者相同" },
+  { prompt: '计算矩阵 A 的范数', answer: 'norm(A)', alt: [], explain: 'norm 默认计算2-范数（最大奇异值）' },
+  { prompt: '将矩阵 A 重塑为 3x4', answer: 'reshape(A,3,4)', alt: ['reshape(A, 3, 4)'], explain: 'reshape 要求元素总数不变' },
+  { prompt: '将矩阵 A 左右翻转', answer: 'fliplr(A)', alt: [], explain: 'fliplr 左右翻转，flipud 上下翻转' },
+  { prompt: '将矩阵 A 上下翻转', answer: 'flipud(A)', alt: [], explain: 'flipud 上下翻转矩阵各行的顺序' },
+  { prompt: '将矩阵 A 逆时针旋转 90 度', answer: 'rot90(A)', alt: ['rot90(A,1)'], explain: 'rot90(A,k) 旋转 k 个 90 度，默认 k=1' },
+
+  // --- 统计函数 ---
+  { prompt: '对向量 v 进行排序', answer: 'sort(v)', alt: [], explain: 'sort 默认升序排列' },
+  { prompt: '对向量 v 进行降序排序', answer: "sort(v,'descend')", alt: ["sort(v, 'descend')"], explain: "sort(v,'descend') 降序排列" },
+  { prompt: '求向量 v 中的最大值', answer: 'max(v)', alt: [], explain: 'max() 返回最大值，[m,i]=max(v) 还可获取索引' },
+  { prompt: '求向量 v 中的最小值', answer: 'min(v)', alt: [], explain: 'min() 返回最小值' },
+  { prompt: '计算向量 v 的平均值', answer: 'mean(v)', alt: [], explain: 'mean() 计算算术平均值' },
+  { prompt: '计算向量 v 的中位数', answer: 'median(v)', alt: [], explain: 'median() 返回中间值' },
+  { prompt: '计算向量 v 的标准差', answer: 'std(v)', alt: [], explain: 'std() 默认计算样本标准差（除以 n-1）' },
+  { prompt: '计算向量 v 的方差', answer: 'var(v)', alt: [], explain: 'var() 默认计算样本方差' },
+  { prompt: '计算向量 v 的元素总和', answer: 'sum(v)', alt: [], explain: 'sum() 求和，对矩阵默认按列求和' },
+  { prompt: '计算向量 v 的元素累积和', answer: 'cumsum(v)', alt: [], explain: 'cumsum() 返回累积和向量' },
+  { prompt: '计算向量 v 的元素乘积', answer: 'prod(v)', alt: [], explain: 'prod() 计算所有元素的乘积' },
+
+  // --- 数学函数 ---
+  { prompt: '计算 x 的绝对值', answer: 'abs(x)', alt: [], explain: 'abs() 返回绝对值，对复数返回模' },
+  { prompt: '计算 x 的平方根', answer: 'sqrt(x)', alt: [], explain: 'sqrt() 等价于 x.^0.5' },
+  { prompt: '计算 e 的 x 次幂', answer: 'exp(x)', alt: [], explain: 'exp(x) = e^x' },
+  { prompt: '计算 x 的自然对数', answer: 'log(x)', alt: [], explain: 'log() 是自然对数 ln(x)，不是 log10' },
+  { prompt: '计算 x 的以 10 为底的对数', answer: 'log10(x)', alt: [], explain: 'log10() 计算常用对数' },
+  { prompt: '计算 x 的以 2 为底的对数', answer: 'log2(x)', alt: [], explain: 'log2() 在二进制计算中常用' },
+  { prompt: '对 x 向下取整', answer: 'floor(x)', alt: [], explain: 'floor() 向负无穷取整' },
+  { prompt: '对 x 向上取整', answer: 'ceil(x)', alt: [], explain: 'ceil() 向正无穷取整' },
+  { prompt: '对 x 四舍五入', answer: 'round(x)', alt: [], explain: 'round() 四舍五入到最近整数' },
+  { prompt: '计算 x 除以 y 的余数', answer: 'mod(x,y)', alt: ['mod(x, y)', 'rem(x,y)'], explain: 'mod(x,y) 取模运算，rem(x,y) 取余运算' },
+  { prompt: '求 x 的正弦值', answer: 'sin(x)', alt: [], explain: 'sin() 参数单位为弧度' },
+  { prompt: '求 x 的余弦值', answer: 'cos(x)', alt: [], explain: 'cos() 参数单位为弧度' },
+  { prompt: '求 x 的正切值', answer: 'tan(x)', alt: [], explain: 'tan() 参数单位为弧度' },
+  { prompt: '求 x 的反正弦值', answer: 'asin(x)', alt: [], explain: 'asin() 返回弧度值，x 范围 [-1,1]' },
+  { prompt: '计算向量 x 的快速傅里叶变换', answer: 'fft(x)', alt: [], explain: 'fft 计算离散傅里叶变换，ifft 为逆变换' },
+
+  // --- 矩阵信息 ---
+  { prompt: '获取矩阵 A 的大小', answer: 'size(A)', alt: [], explain: 'size 返回 [行数 列数]，size(A,1) 单独获取行数' },
+  { prompt: '获取向量 v 的长度', answer: 'length(v)', alt: [], explain: 'length() 返回最大维度的长度' },
+  { prompt: '获取矩阵 A 的元素总数', answer: 'numel(A)', alt: [], explain: 'numel() = 行数 × 列数' },
+  { prompt: '判断变量 x 是否为空', answer: 'isempty(x)', alt: [], explain: 'isempty() 对空矩阵 [] 返回 true' },
+  { prompt: '判断 x 是否为 NaN', answer: 'isnan(x)', alt: [], explain: 'NaN 不等于任何值包括自身，只能用 isnan 检测' },
+  { prompt: '判断 x 是否为有限数', answer: 'isfinite(x)', alt: [], explain: 'isfinite 对 NaN 和 Inf 返回 false' },
+
+  // --- 绘图命令 ---
+  { prompt: '打开一个新的图形窗口', answer: 'figure', alt: ['figure;', 'figure()'], explain: 'figure 创建新图形窗口，后续 plot 会画在此窗口' },
+  { prompt: '为当前图形添加网格线', answer: 'grid on', alt: ['grid on;'], explain: 'grid on/off 控制网格线显示' },
+  { prompt: '关闭所有图形窗口', answer: 'close all', alt: ['close all;'], explain: 'close all 关闭所有 figure 窗口' },
+  { prompt: '保持当前图形以便叠加绘图', answer: 'hold on', alt: ['hold on;'], explain: 'hold on 后，新 plot 不会覆盖旧图，而是叠加' },
+  { prompt: '取消 hold 状态', answer: 'hold off', alt: ['hold off;'], explain: 'hold off 后，新 plot 会替换旧图' },
+  { prompt: '为图形添加图例', answer: 'legend', alt: ['legend()'], explain: "legend('a','b') 为曲线添加标签说明" },
+  { prompt: '设置 x 轴的范围为 0 到 10', answer: 'xlim([0 10])', alt: ['xlim([0, 10])'], explain: 'xlim/ylim 手动设置坐标轴范围' },
+  { prompt: '设置 y 轴的范围为 -1 到 1', answer: 'ylim([-1 1])', alt: ['ylim([-1, 1])'], explain: 'ylim([ymin ymax]) 设置 y 轴范围' },
+  { prompt: '绘制向量 x 和 y 的线图', answer: 'plot(x,y)', alt: ['plot(x, y)'], explain: 'plot 是最基本的2D绘图命令' },
+  { prompt: '绘制数据的柱状图', answer: 'bar(data)', alt: ['bar(data);'], explain: 'bar() 绘制竖直柱状图，barh() 绘制水平柱状图' },
+  { prompt: '绘制散点图', answer: 'scatter(x,y)', alt: ['scatter(x, y)'], explain: 'scatter 每个数据点画一个标记' },
+  { prompt: '绘制数据的直方图', answer: 'histogram(data)', alt: ['histogram(data);', 'hist(data)'], explain: 'histogram 统计数据分布频率' },
+  { prompt: '绘制饼图', answer: 'pie(data)', alt: ['pie(data);'], explain: 'pie() 按比例绘制扇形图' },
+  { prompt: '绘制三维曲面图', answer: 'surf(X,Y,Z)', alt: ['surf(X, Y, Z)'], explain: 'surf 绘制彩色三维曲面，mesh 绘制网格曲面' },
+  { prompt: '绘制等高线图', answer: 'contour(X,Y,Z)', alt: ['contour(X, Y, Z)', 'contour(Z)'], explain: 'contour 绘制二维等高线，contourf 填充等高线' },
+
+  // --- 工作区/系统 ---
+  { prompt: '显示变量 x 的值', answer: 'disp(x)', alt: [], explain: 'disp() 在命令窗口显示变量值，不显示变量名' },
+  { prompt: '清除工作区所有变量', answer: 'clear', alt: ['clear all', 'clear;'], explain: 'clear 清除变量，clc 清除命令窗口' },
+  { prompt: '清除命令窗口的内容', answer: 'clc', alt: ['clc;'], explain: 'clc 只清屏幕显示，不删除变量' },
+  { prompt: '在命令行中获取帮助信息', answer: 'help', alt: ['help;', 'doc'], explain: 'help 函数名 查看函数文档，doc 打开帮助浏览器' },
+  { prompt: '查看当前工作区的所有变量', answer: 'whos', alt: ['who'], explain: 'whos 显示变量详情（名称、大小、类型），who 只显示名称' },
+  { prompt: '获取当前工作目录路径', answer: 'pwd', alt: ['pwd;'], explain: 'pwd = print working directory' },
+  { prompt: '列出当前目录下的文件', answer: 'ls', alt: ['dir', 'ls;', 'dir;'], explain: 'ls 和 dir 都可列出文件' },
+
+  // --- 字符串操作 ---
+  { prompt: '将字符串 s 转为大写', answer: 'upper(s)', alt: [], explain: 'upper() 全部转大写，lower() 全部转小写' },
+  { prompt: '将字符串 s 转为小写', answer: 'lower(s)', alt: [], explain: 'lower() 将所有字母转为小写' },
+  { prompt: '获取字符串 s 的长度', answer: 'strlength(s)', alt: ['length(s)'], explain: 'strlength 用于 string 类型，length 用于字符数组' },
+  { prompt: '将数字 x 转换为字符串', answer: 'num2str(x)', alt: ['string(x)'], explain: 'num2str 转为字符数组，string() 转为 string 对象' },
+  { prompt: '将字符串 s 转换为数字', answer: 'str2double(s)', alt: ['str2num(s)'], explain: 'str2double 更安全，str2num 可执行表达式' },
+  { prompt: '用 sprintf 格式化输出圆周率保留两位小数', answer: "sprintf('%.2f',pi)", alt: ["sprintf('%.2f', pi)"], explain: "sprintf 类似 C 语言的格式化，%.2f 表示两位小数" },
+
+  // --- 数据类型 ---
+  { prompt: '判断 x 的数据类型', answer: 'class(x)', alt: [], explain: 'class() 返回变量的类型名称字符串' },
+  { prompt: '将 x 转换为双精度浮点数', answer: 'double(x)', alt: [], explain: 'double() 是 MATLAB 默认的数值类型' },
+  { prompt: '将 x 转换为 int32 类型', answer: 'int32(x)', alt: [], explain: 'int32 是32位有符号整数' },
+  { prompt: '将 x 转换为逻辑类型', answer: 'logical(x)', alt: [], explain: 'logical() 非零值变 true，零变 false' },
+  { prompt: '创建一个空的元胞数组 3x3', answer: 'cell(3,3)', alt: ['cell(3, 3)', 'cell(3)'], explain: 'cell() 创建空的元胞数组，可存不同类型数据' },
+
+  // --- 查找/逻辑 ---
+  { prompt: '找出向量 v 中大于 5 的元素的索引', answer: 'find(v>5)', alt: ['find(v > 5)'], explain: 'find() 返回满足条件的线性索引' },
+  { prompt: '判断向量 v 中是否所有元素都大于 0', answer: 'all(v>0)', alt: ['all(v > 0)'], explain: 'all() 所有为真返回 true' },
+  { prompt: '判断向量 v 中是否存在大于 10 的元素', answer: 'any(v>10)', alt: ['any(v > 10)'], explain: 'any() 任意一个为真返回 true' },
+  { prompt: '去除向量 v 中的重复元素', answer: 'unique(v)', alt: [], explain: 'unique() 返回排序后的不重复元素' },
+
+  // --- 线性代数 ---
+  { prompt: '对矩阵 A 进行 LU 分解', answer: 'lu(A)', alt: [], explain: '[L,U,P]=lu(A)，PA=LU 分解' },
+  { prompt: '对矩阵 A 进行 QR 分解', answer: 'qr(A)', alt: [], explain: '[Q,R]=qr(A)，Q正交矩阵，R上三角矩阵' },
+  { prompt: '对矩阵 A 进行奇异值分解', answer: 'svd(A)', alt: [], explain: '[U,S,V]=svd(A)，A=U*S*V\x27' },
+  { prompt: '计算矩阵 A 的伪逆', answer: 'pinv(A)', alt: [], explain: 'pinv() 对任意矩阵（包括非方阵）求伪逆' },
+  { prompt: '求矩阵 A 的条件数', answer: 'cond(A)', alt: [], explain: 'cond() 越大表示矩阵越病态，数值计算越不稳定' },
+  { prompt: '生成一个 3x3 的希尔伯特矩阵', answer: 'hilb(3)', alt: [], explain: 'hilb(n) 生成经典的病态矩阵，常用于数值分析测试' },
+
+  // --- 多项式 ---
+  { prompt: '求多项式系数为 [1 -3 2] 的根', answer: 'roots([1 -3 2])', alt: ['roots([1,-3,2])'], explain: 'roots() 求 x^2-3x+2=0 的根，即 x=1 和 x=2' },
+  { prompt: '在 x=2 处求多项式 [1 -3 2] 的值', answer: 'polyval([1 -3 2],2)', alt: ['polyval([1,-3,2],2)', 'polyval([1 -3 2], 2)'], explain: 'polyval(p,x) 计算多项式在 x 处的值' },
+
+  // --- 文件/IO ---
+  { prompt: '将工作区变量保存到文件 data.mat', answer: "save('data.mat')", alt: ['save data.mat', "save('data.mat');"], explain: 'save 将变量保存为 .mat 二进制文件' },
+  { prompt: '从文件 data.mat 加载变量', answer: "load('data.mat')", alt: ['load data.mat', "load('data.mat');"], explain: 'load 恢复 .mat 文件中保存的变量' },
+  { prompt: '读取 CSV 文件 data.csv', answer: "readmatrix('data.csv')", alt: ["csvread('data.csv')"], explain: 'readmatrix 是推荐的读取方式（R2019a+）' },
+
+  // --- 杂项 ---
+  { prompt: '暂停程序执行 2 秒', answer: 'pause(2)', alt: [], explain: 'pause(n) 暂停 n 秒，pause 不带参数等待按键' },
+  { prompt: '测量代码运行时间（启动计时器）', answer: 'tic', alt: ['tic;'], explain: 'tic 开始计时，toc 结束并显示耗时' },
+  { prompt: '生成一个 5 阶伴随矩阵', answer: 'compan([1 0 0 0 0 1])', alt: [], explain: 'compan(p) 生成多项式 p 的伴随矩阵' },
+  { prompt: '将矩阵 A 沿第一维度拼接 B', answer: 'cat(1,A,B)', alt: ['cat(1, A, B)', '[A;B]', '[A; B]'], explain: 'cat(1,A,B) 等同于 [A;B]，cat(2,A,B) 等同于 [A,B]' },
+  { prompt: '将矩阵 A 沿水平方向拼接 B', answer: '[A,B]', alt: ['[A B]', 'cat(2,A,B)', 'horzcat(A,B)'], explain: '[A,B] 或 [A B] 水平拼接，要求行数相同' },
+  { prompt: '创建一个从 0 到 2*pi 的100个等距点', answer: 'linspace(0,2*pi,100)', alt: ['linspace(0, 2*pi, 100)'], explain: 'linspace 常用于生成绘图用的 x 轴数据' },
+  { prompt: '交叉验证：生成网格坐标矩阵', answer: 'meshgrid(x,y)', alt: ['meshgrid(x, y)', '[X,Y]=meshgrid(x,y)'], explain: 'meshgrid 为三维绘图生成坐标网格' },
+];
+
+function initTerminal() {
+  const screen = document.getElementById('gameTerminal');
+  const tasks = shuffle([...terminalTasks]).slice(0, 8);
+  let currentQ = 0, score = 0;
+  let history = [];
+
+  function renderTerminal() {
+    screen.innerHTML = makeGameHeader('极速终端', 'gameTerminal',
+      `<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${tasks.length}</span>`
+    ) + `<div class="game-body">
+      <div class="terminal-wrap">
+        <div class="terminal-header">
+          <span class="dot" style="background:#ff5f57"></span>
+          <span class="dot" style="background:#ffbd2e"></span>
+          <span class="dot" style="background:#28ca41"></span>
+          <span style="margin-left:.5rem">MATLAB Command Window</span>
+        </div>
+        <div class="terminal-body" id="termBody">
+          ${history.map(h => `<div class="terminal-line ${h.type}">${escHtml(h.text)}</div>`).join('')}
+          <div class="terminal-task">▸ ${tasks[currentQ].prompt}</div>
+          <div class="terminal-input-line">
+            <span class="prompt-symbol">&gt;&gt;</span>
+            <input class="terminal-input" id="termInput" autocomplete="off" autocorrect="off" spellcheck="false">
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+    const input = document.getElementById('termInput');
+    input.focus();
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        AudioEngine.play('type');
+        const val = input.value.trim().replace(/;$/, '');
+        const task = tasks[currentQ];
+        const correct = val === task.answer || val === task.answer + ';' || task.alt.includes(val) || task.alt.includes(val + ';');
+        history.push({ text: `>> ${input.value}`, type: 'terminal-prompt' });
+        if (correct) {
+          history.push({ text: '✓ 正确！', type: 'terminal-output' });
+          score += 15;
+          AudioEngine.play('correct');
+        } else {
+          history.push({ text: `✗ 错误。正确答案: ${task.answer}`, type: 'terminal-error' });
+          if (task.explain) {
+            history.push({ text: `  💡 ${task.explain}`, type: 'terminal-output' });
+          }
+          AudioEngine.play('wrong');
+        }
+        currentQ++;
+        if (currentQ < tasks.length) {
+          setTimeout(renderTerminal, 1200);
+        } else {
+          setTimeout(() => showResult('terminal', score, tasks.length * 15), 1400);
+        }
+      }
+    });
+    document.getElementById('termBody').scrollTop = 9999;
+    showScreen('gameTerminal');
+    setTimeout(() => input.focus(), 100);
+  }
+
+  renderTerminal();
+}
+
+// ===================== MODE 6: PLOT DETECTIVE =====================
+const plotData = [
+  {
+    draw: (ctx, w, h) => {
+      ctx.strokeStyle = '#00E5FF'; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= w; i++) {
+        const x = i; const y = h/2 - Math.sin((i/w) * 4 * Math.PI) * (h/3);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      drawAxes(ctx, w, h);
+    },
+    correct: 'plot(x, sin(x))',
+    options: ['plot(x, sin(x))', 'plot(x, cos(x))', 'bar(x, sin(x))', 'stem(x, sin(x))'],
+    explain: 'plot() 绘制连续线图。此波形从0开始、周期性振荡，是典型正弦波 sin(x) 的特征。'
+  },
+  {
+    draw: (ctx, w, h) => {
+      const vals = [3, 7, 2, 8, 5]; const bw = w / (vals.length * 2 + 1);
+      ctx.fillStyle = '#FF6600';
+      vals.forEach((v, i) => {
+        const bh = (v / 10) * (h - 40);
+        ctx.fillRect(bw + i * bw * 2, h - 20 - bh, bw, bh);
+      });
+      drawAxes(ctx, w, h);
+    },
+    correct: 'bar(data)',
+    options: ['bar(data)', 'plot(data)', 'histogram(data)', 'stem(data)'],
+    explain: 'bar() 绘制柱状图，每个数据点对应一个矩形柱。histogram 用于频率分布直方图，两者不同。'
+  },
+  {
+    draw: (ctx, w, h) => {
+      ctx.fillStyle = '#AA66FF';
+      const pts = [[.1,.3],[.2,.5],[.35,.4],[.5,.7],[.6,.6],[.75,.8],[.8,.75],[.9,.9],[.15,.2],[.45,.55]];
+      pts.forEach(p => { ctx.beginPath(); ctx.arc(p[0]*w*.8+w*.1, h-p[1]*h*.8-h*.1, 4, 0, Math.PI*2); ctx.fill(); });
+      drawAxes(ctx, w, h);
+    },
+    correct: 'scatter(x, y)',
+    options: ['scatter(x, y)', 'plot(x, y)', "plot(x, y, 'o')", 'bar(x, y)'],
+    explain: "scatter() 绘制散点图，每个数据点用圆点表示。plot(x,y,'o') 也能画圆点，但 scatter 是专用散点图命令。"
+  },
+  {
+    draw: (ctx, w, h) => {
+      ctx.strokeStyle = '#00FF88'; ctx.lineWidth = 2;
+      const n = 10;
+      for (let i = 0; i < n; i++) {
+        const x = (i + 1) / (n + 1) * w;
+        const v = Math.sin(i * .7) * .35 + .5;
+        const y = h - v * (h - 40) - 20;
+        ctx.beginPath(); ctx.moveTo(x, h - 20); ctx.lineTo(x, y); ctx.stroke();
+        ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fillStyle = '#00FF88'; ctx.fill();
+      }
+      drawAxes(ctx, w, h);
+    },
+    correct: 'stem(x, y)',
+    options: ['stem(x, y)', 'bar(x, y)', 'plot(x, y)', 'stairs(x, y)'],
+    explain: 'stem() 绘制火柴棒图（离散数据图），每个数据点用一条竖线+顶端圆点表示，适合显示离散信号。'
+  },
+  {
+    draw: (ctx, w, h) => {
+      ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= w; i++) {
+        const x = i; const y = h/2 - Math.cos((i/w) * 4 * Math.PI) * (h/3);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      drawAxes(ctx, w, h);
+    },
+    correct: 'plot(x, cos(x))',
+    options: ['plot(x, cos(x))', 'plot(x, sin(x))', 'plot(x, tan(x))', 'plot(x, exp(x))'],
+    explain: 'cos(x) 在 x=0 处值为1（波峰开始），而 sin(x) 在 x=0 处值为0。观察起始点可以区分两者。'
+  },
+  {
+    draw: (ctx, w, h) => {
+      ctx.strokeStyle = '#FF3366'; ctx.lineWidth = 2;
+      const vals = [2, 5, 3, 7, 4, 6];
+      const sw = (w - 40) / vals.length;
+      ctx.beginPath();
+      vals.forEach((v, i) => {
+        const y = h - 20 - (v / 8) * (h - 40);
+        const x1 = 20 + i * sw, x2 = 20 + (i + 1) * sw;
+        if (i === 0) ctx.moveTo(x1, y);
+        else ctx.lineTo(x1, y);
+        ctx.lineTo(x2, y);
+      });
+      ctx.stroke();
+      drawAxes(ctx, w, h);
+    },
+    correct: 'stairs(x, y)',
+    options: ['stairs(x, y)', 'plot(x, y)', 'bar(x, y)', 'stem(x, y)'],
+    explain: 'stairs() 绘制阶梯图，数据在每段保持水平然后跳变。常用于显示量化信号或离散时间系统的输出。'
+  },
+  {
+    draw: (ctx, w, h) => {
+      ctx.fillStyle = '#FF660044'; ctx.strokeStyle = '#FF6600'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(20, h - 20);
+      for (let i = 0; i <= 50; i++) {
+        const x = 20 + (i / 50) * (w - 40);
+        const y = h - 20 - (Math.sin(i / 8) * .3 + .4) * (h - 40);
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(w - 20, h - 20); ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      for (let i = 0; i <= 50; i++) {
+        const x = 20 + (i / 50) * (w - 40);
+        const y = h - 20 - (Math.sin(i / 8) * .3 + .4) * (h - 40);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      drawAxes(ctx, w, h);
+    },
+    correct: 'area(x, y)',
+    options: ['area(x, y)', 'fill(x, y)', 'plot(x, y)', 'patch(x, y)'],
+    explain: 'area() 绘制填充面积图，曲线下方区域被颜色填充。fill 用于多边形填充，patch 用于更复杂的图形对象。'
+  },
+  {
+    draw: (ctx, w, h) => {
+      const vals = [30, 20, 25, 25];
+      const colors = ['#FF6600', '#00E5FF', '#AA66FF', '#00FF88'];
+      const cx = w/2, cy = h/2, r = Math.min(w, h) * .35;
+      let start = 0;
+      vals.forEach((v, i) => {
+        const angle = (v / 100) * Math.PI * 2;
+        ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, start, start + angle);
+        ctx.closePath(); ctx.fillStyle = colors[i]; ctx.fill();
+        ctx.strokeStyle = '#0a0a12'; ctx.lineWidth = 2; ctx.stroke();
+        start += angle;
+      });
+    },
+    correct: 'pie(data)',
+    options: ['pie(data)', 'bar(data)', 'histogram(data)', 'polar(data)'],
+    explain: 'pie() 绘制饼图，将数据按比例划分为扇形。适合展示各部分占总体的百分比关系。'
+  },
+];
+
+function drawAxes(ctx, w, h) {
+  ctx.strokeStyle = '#ffffff30'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(20, 10); ctx.lineTo(20, h - 20); ctx.lineTo(w - 10, h - 20); ctx.stroke();
+}
+
+function initPlot() {
+  const screen = document.getElementById('gamePlot');
+  const challenges = shuffle([...plotData]).slice(0, 6);
+  let currentQ = 0, score = 0;
+
+  function renderPlot() {
+    const ch = challenges[currentQ];
+    const opts = shuffle([...ch.options]);
+    screen.innerHTML = makeGameHeader('图形侦探', 'gamePlot',
+      `<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`
+    ) + `<div class="game-body">
+      <div class="plot-wrap">
+        <div class="plot-canvas-wrap">
+          <div style="font-size:.75rem;color:var(--text2);margin-bottom:.5rem;font-family:Orbitron;letter-spacing:.1em">这个图形是由什么命令生成的？</div>
+          <canvas id="plotCanvas" width="400" height="300"></canvas>
+        </div>
+        <div class="plot-options" id="plotOpts"></div>
+      </div>
+    </div>`;
+
+    const canvas = document.getElementById('plotCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 400, 300);
+    ch.draw(ctx, 400, 300);
+
+    const optsEl = document.getElementById('plotOpts');
+    opts.forEach(o => {
+      const opt = document.createElement('div');
+      opt.className = 'plot-option';
+      opt.textContent = o;
+      opt.addEventListener('click', () => {
+        AudioEngine.play('click');
+        optsEl.querySelectorAll('.plot-option').forEach(el => el.style.pointerEvents = 'none');
+        if (o === ch.correct) {
+          opt.classList.add('correct');
+          AudioEngine.play('correct');
+          score += 15;
+          const rect = opt.getBoundingClientRect();
+          spawnParticles(rect.left + rect.width/2, rect.top, '#00FF88');
+        } else {
+          opt.classList.add('wrong');
+          AudioEngine.play('wrong');
+          optsEl.querySelectorAll('.plot-option').forEach(el => {
+            if (el.textContent === ch.correct) el.classList.add('correct');
+          });
+        }
+        // Show explanation
+        if (ch.explain) {
+          const exp = document.createElement('div');
+          exp.style.cssText = 'margin-top:.8rem;padding:.6rem;background:#ff660015;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;font-size:.8rem;color:var(--text);line-height:1.5';
+          exp.textContent = '💡 ' + ch.explain;
+          optsEl.appendChild(exp);
+        }
+        // Add "next" button below options
+        const isLast = currentQ + 1 >= challenges.length;
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-sm btn-cyan';
+        nextBtn.style.cssText = 'margin-top:.8rem;align-self:center';
+        nextBtn.textContent = isLast ? '查看成绩' : '下一题 ▸';
+        nextBtn.addEventListener('click', () => {
+          AudioEngine.play('click');
+          currentQ++;
+          if (currentQ < challenges.length) renderPlot();
+          else showResult('plot', score, challenges.length * 15);
+        });
+        optsEl.appendChild(nextBtn);
+      });
+      optsEl.appendChild(opt);
+    });
+
+    showScreen('gamePlot');
+  }
+  renderPlot();
+}
+
+// ===================== MODE 7: CODE MAZE =====================
+function initMaze() {
+  const screen = document.getElementById('gameMaze');
+  const mazeW = 13, mazeH = 13;
+  const maze = generateMaze(mazeW, mazeH);
+  let playerPos = { x: 1, y: 1 };
+  const exitPos = { x: mazeW - 2, y: mazeH - 2 };
+  let score = 0, questionActive = false, visited = new Set();
+  visited.add(`${playerPos.x},${playerPos.y}`);
+
+  const questionCells = new Set();
+  const mazeQuestions = shuffle([...mazeQData]).slice(0, 6);
+  let qIdx = 0;
+  const pathCells = [];
+  for (let y = 0; y < mazeH; y++) for (let x = 0; x < mazeW; x++) {
+    if (maze[y][x] === 0 && !(x===1&&y===1) && !(x===exitPos.x&&y===exitPos.y)) pathCells.push({x,y});
+  }
+  shuffle(pathCells).slice(0, mazeQuestions.length).forEach(c => questionCells.add(`${c.x},${c.y}`));
+
+  function renderMaze() {
+    screen.innerHTML = makeGameHeader('代码迷宫', 'gameMaze',
+      `<span class="game-score">得分: ${score}</span><span style="color:var(--green);font-family:Orbitron;font-size:.8rem">WASD / 方向键移动</span>`
+    ) + `<div class="game-body"><div class="maze-container"><div class="maze-viewport"><div class="maze-grid-wrap" id="mazeWrap"><div class="maze-grid" id="mazeGrid" style="grid-template-columns:repeat(${mazeW},40px)"></div></div></div>
+    <div class="mobile-controls">
+      <div></div><button onclick="window._mazeMove(0,-1)">▲</button><div></div>
+      <button onclick="window._mazeMove(-1,0)">◀</button><div></div><button onclick="window._mazeMove(1,0)">▶</button>
+      <div></div><button onclick="window._mazeMove(0,1)">▼</button><div></div>
+    </div>
+    </div></div>`;
+
+    const grid = document.getElementById('mazeGrid');
+    for (let y = 0; y < mazeH; y++) {
+      for (let x = 0; x < mazeW; x++) {
+        const cell = document.createElement('div');
+        let cls = 'maze-cell';
+        if (maze[y][x] === 1) cls += ' wall';
+        else cls += ' path';
+        if (x === playerPos.x && y === playerPos.y) cls += ' player';
+        if (x === exitPos.x && y === exitPos.y) cls += ' exit';
+        if (visited.has(`${x},${y}`) && maze[y][x] === 0) cls += ' visited';
+        if (questionCells.has(`${x},${y}`)) { cls += ' question-cell'; cell.textContent = '?'; }
+        cell.className = cls;
+        grid.appendChild(cell);
+      }
+    }
+    showScreen('gameMaze');
+  }
+
+  window._mazeMove = (dx, dy) => movePlayer(dx, dy);
+
+  function movePlayer(dx, dy) {
+    if (questionActive) return;
+    const nx = playerPos.x + dx, ny = playerPos.y + dy;
+    if (nx < 0 || ny < 0 || nx >= mazeW || ny >= mazeH || maze[ny][nx] === 1) return;
+    playerPos = { x: nx, y: ny };
+    visited.add(`${nx},${ny}`);
+    AudioEngine.play('click');
+
+    if (nx === exitPos.x && ny === exitPos.y) {
+      score += 30;
+      setTimeout(() => showResult('maze', score, 30 + mazeQuestions.length * 15), 300);
+      return;
+    }
+
+    renderMaze();
+
+    const key = `${nx},${ny}`;
+    if (questionCells.has(key) && qIdx < mazeQuestions.length) {
+      questionCells.delete(key);
+      showMazeQuestion(mazeQuestions[qIdx++]);
+    }
+  }
+
+  function showMazeQuestion(q) {
+    questionActive = true;
+    const popup = document.createElement('div');
+    popup.className = 'maze-question-popup';
+    popup.innerHTML = `<h3>&#9670; 代码关卡 &#9670;</h3><pre>${escHtml(q.code)}</pre><div class="mq-options">${
+      q.options.map((o, i) => `<div class="mq-opt" data-i="${i}">${escHtml(o)}</div>`).join('')
+    }</div><div class="mq-explain" style="display:none;margin-top:.8rem;padding:.6rem;background:#ff660015;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;font-size:.75rem;color:var(--text);line-height:1.5"></div><div style="text-align:center;margin-top:.8rem"><button class="btn btn-sm btn-cyan" style="display:none" id="mqContinue">继续探索 ▸</button></div>`;
+    document.body.appendChild(popup);
+
+    const explainEl = popup.querySelector('.mq-explain');
+    const continueBtn = popup.querySelector('#mqContinue');
+
+    popup.querySelectorAll('.mq-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        // Disable all options
+        popup.querySelectorAll('.mq-opt').forEach(o => o.style.pointerEvents = 'none');
+        const correct = +opt.dataset.i === q.correct;
+        if (correct) {
+          AudioEngine.play('correct'); score += 15; opt.style.borderColor = 'var(--green)'; opt.style.background = '#00ff8820';
+        } else {
+          AudioEngine.play('wrong'); opt.style.borderColor = 'var(--red)'; opt.style.background = '#ff336620';
+          popup.querySelectorAll('.mq-opt')[q.correct].style.borderColor = 'var(--green)';
+          popup.querySelectorAll('.mq-opt')[q.correct].style.background = '#00ff8810';
+        }
+        // Show explanation
+        if (q.explain) {
+          explainEl.textContent = '💡 ' + q.explain;
+          explainEl.style.display = 'block';
+        }
+        // Show continue button
+        continueBtn.style.display = 'inline-block';
+        continueBtn.addEventListener('click', () => {
+          AudioEngine.play('click');
+          popup.remove();
+          questionActive = false;
+          renderMaze();
+        });
+      });
+    });
+  }
+
+  function handleKey(e) {
+    if (state.currentMode !== 'maze') { document.removeEventListener('keydown', handleKey); return; }
+    const map = { ArrowUp: [0,-1], ArrowDown: [0,1], ArrowLeft: [-1,0], ArrowRight: [1,0],
+                   w: [0,-1], s: [0,1], a: [-1,0], d: [1,0],
+                   W: [0,-1], S: [0,1], A: [-1,0], D: [1,0] };
+    if (map[e.key]) { e.preventDefault(); movePlayer(...map[e.key]); }
+  }
+  document.addEventListener('keydown', handleKey);
+
+  renderMaze();
+}
+
+const mazeQData = [
+  { code: 'A = [1 2; 3 4];\nB = A(2,:);\ndisp(B)', options: ['[3 4]', '[2; 4]', '[1 2]', '[3; 4]'], correct: 0, explain: 'A(2,:) 取第2行所有列。A的第2行是 [3 4]。冒号 : 表示选取该维度的全部元素。' },
+  { code: 'x = 5;\nif x > 3\n  y = x^2;\nelse\n  y = x;\nend\ndisp(y)', options: ['25', '5', '3', '错误'], correct: 0, explain: 'x=5 > 3 为 true，进入 if 分支，y = 5^2 = 25。' },
+  { code: 'v = 1:2:9;\ndisp(length(v))', options: ['5', '4', '9', '3'], correct: 0, explain: '1:2:9 生成 [1 3 5 7 9]（从1开始，步长2，到9为止），共5个元素。' },
+  { code: 'A = eye(3);\ndisp(sum(A(:)))', options: ['3', '9', '1', '0'], correct: 0, explain: 'eye(3) 是3阶单位矩阵，对角线为1其余为0。A(:) 将矩阵展开为列向量，sum 求和 = 3。' },
+  { code: 'x = [4 1 3 2];\ny = sort(x);\ndisp(y(end))', options: ['4', '1', '2', '3'], correct: 0, explain: 'sort 升序排列得 [1 2 3 4]，y(end) 取最后一个元素 = 4。' },
+  { code: "s = 'MATLAB';\ndisp(s(1:3))", options: ['MAT', 'MATL', 'LAB', 'M'], correct: 0, explain: "字符串可以像数组一样索引。s(1:3) 取第1到第3个字符 = 'MAT'。" },
+  { code: 'A = [1 2; 3 4];\ndisp(det(A))', options: ['-2', '2', '10', '0'], correct: 0, explain: '2阶矩阵行列式 = a*d - b*c = 1*4 - 2*3 = -2。' },
+  { code: 'x = linspace(0,1,5);\ndisp(x(3))', options: ['0.5', '0.25', '0.75', '0.3333'], correct: 0, explain: 'linspace(0,1,5) = [0, 0.25, 0.5, 0.75, 1]，第3个元素 = 0.5。' },
+  { code: 'A = ones(2,3);\ndisp(size(A,2))', options: ['3', '2', '6', '1'], correct: 0, explain: 'ones(2,3) 创建2行3列全1矩阵。size(A,2) 返回第2个维度(列数) = 3。' },
+  { code: 'v = [10 20 30];\nv(end+1) = 40;\ndisp(length(v))', options: ['4', '3', '错误', '40'], correct: 0, explain: 'v(end+1)=40 在向量末尾追加元素，v 变为 [10 20 30 40]，长度 = 4。' },
+];
+
+function generateMaze(w, h) {
+  const grid = Array.from({length: h}, () => Array(w).fill(1));
+  function carve(x, y) {
+    grid[y][x] = 0;
+    const dirs = shuffle([[0,-2],[0,2],[-2,0],[2,0]]);
+    for (const [dx, dy] of dirs) {
+      const nx = x + dx, ny = y + dy;
+      if (nx > 0 && ny > 0 && nx < w - 1 && ny < h - 1 && grid[ny][nx] === 1) {
+        grid[y + dy/2][x + dx/2] = 0;
+        carve(nx, ny);
+      }
+    }
+  }
+  carve(1, 1);
+  grid[h-2][w-2] = 0;
+  if (grid[h-3][w-2] === 1 && grid[h-2][w-3] === 1) {
+    grid[h-3][w-2] = 0;
+  }
+  return grid;
+}
+
+// ===================== MODE 8: OUTPUT PREDICT (NEW) =====================
+const outputData = [
+  {
+    code: "A = [1 2; 3 4];\nB = A * A;\ndisp(B(1,2))",
+    answer: "10",
+    hint: "矩阵乘法 A*A = [1*1+2*3, 1*2+2*4; 3*1+4*3, 3*2+4*4]"
+  },
+  {
+    code: "x = 1:5;\ny = x.^2;\ndisp(sum(y))",
+    answer: "55",
+    hint: "1^2+2^2+3^2+4^2+5^2 = 1+4+9+16+25 = 55"
+  },
+  {
+    code: "A = [3 1 4; 1 5 9; 2 6 5];\ndisp(A(2,3))",
+    answer: "9",
+    hint: "A(2,3) 表示第2行第3列的元素"
+  },
+  {
+    code: "v = [10 20 30 40 50];\ndisp(v(end-1))",
+    answer: "40",
+    hint: "end 表示最后一个索引，end-1 就是倒数第二个"
+  },
+  {
+    code: "x = 'Hello';\ndisp(length(x))",
+    answer: "5",
+    hint: "字符串 'Hello' 有5个字符"
+  },
+  {
+    code: "A = zeros(3);\nA(2,2) = 7;\ndisp(sum(A(:)))",
+    answer: "7",
+    hint: "3x3零矩阵中只有(2,2)位置是7，所有元素之和就是7"
+  },
+  {
+    code: "v = [5 3 8 1 4];\n[m, idx] = max(v);\ndisp(idx)",
+    answer: "3",
+    hint: "最大值8在第3个位置"
+  },
+  {
+    code: "A = [1 2; 3 4];\nB = A';\ndisp(B(1,2))",
+    answer: "3",
+    hint: "转置后 B = [1 3; 2 4]，B(1,2) = 3"
+  },
+  {
+    code: "x = 10;\nwhile x > 1\n    x = x / 2;\nend\ndisp(x)",
+    answer: "0.6250",
+    hint: "10->5->2.5->1.25->0.625，当x=0.625时不满足x>1退出循环",
+    altAnswers: ["0.625", "0.62500"]
+  },
+  {
+    code: "v = [2 4 6 8 10];\nidx = find(v > 5);\ndisp(length(idx))",
+    answer: "3",
+    hint: "大于5的元素有 6,8,10 共3个"
+  },
+  {
+    code: "A = eye(4);\ndisp(trace(A))",
+    answer: "4",
+    hint: "4阶单位矩阵的迹（对角线元素之和）= 4"
+  },
+  {
+    code: "s = 'MATLAB';\ndisp(s(end:-1:1))",
+    answer: "BALTAM",
+    hint: "end:-1:1 表示从最后一个字符到第一个字符，即反转字符串"
+  },
+];
+
+function initOutput() {
+  const screen = document.getElementById('gameOutput');
+  const challenges = shuffle([...outputData]).slice(0, 6);
+  let currentQ = 0, score = 0;
+
+  function renderOutput() {
+    const ch = challenges[currentQ];
+    screen.innerHTML = makeGameHeader('输出预测', 'gameOutput',
+      `<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`
+    ) + `<div class="game-body">
+      <div class="output-wrap">
+        <div class="output-code-box">
+          <div class="output-code-header">
+            <span class="dot" style="background:#ff5f57;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#ffbd2e;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#28ca41;width:8px;height:8px;border-radius:50%"></span>
+            <span style="margin-left:.5rem">predict_output.m</span>
+          </div>
+          <div class="output-code-body">${escHtml(ch.code)}</div>
+        </div>
+        <div class="output-input-area">
+          <div class="output-label">▸ 这段代码的输出结果是什么？</div>
+          <textarea class="output-textarea" id="outputAnswer" placeholder="输入你认为的输出结果..." rows="2"></textarea>
+          <div class="output-expected" id="outputExpected"></div>
+        </div>
+      </div>
+    </div>
+    <div class="game-footer">
+      <button class="btn btn-sm btn-cyan" id="outputSubmit">提交预测</button>
+      <button class="btn btn-sm" id="outputHint" style="border-color:var(--gold);color:var(--gold)">提示 (-5分)</button>
+    </div>`;
+
+    let hintUsed = false;
+    document.getElementById('outputHint').addEventListener('click', () => {
+      if (hintUsed) return;
+      hintUsed = true;
+      const hintEl = document.createElement('div');
+      hintEl.style.cssText = 'margin-top:.5rem;padding:.6rem;background:#ffd70015;border:1px solid var(--gold);border-radius:6px;font-size:.8rem;color:var(--gold);line-height:1.4';
+      hintEl.textContent = '💡 ' + ch.hint;
+      document.querySelector('.output-input-area').appendChild(hintEl);
+      AudioEngine.play('click');
+    });
+
+    document.getElementById('outputSubmit').addEventListener('click', () => {
+      const userAnswer = document.getElementById('outputAnswer').value.trim();
+      const expectedEl = document.getElementById('outputExpected');
+      const allAnswers = [ch.answer, ...(ch.altAnswers || [])];
+      const correct = allAnswers.some(a => userAnswer === a);
+      expectedEl.style.display = 'block';
+      if (correct) {
+        expectedEl.textContent = '✓ 正确！输出: ' + ch.answer;
+        expectedEl.className = 'output-expected';
+        AudioEngine.play('correct');
+        score += hintUsed ? 15 : 20;
+        spawnParticles(window.innerWidth/2, window.innerHeight/2, '#00FF88', 15);
+      } else {
+        expectedEl.textContent = '✗ 正确答案: ' + ch.answer + (ch.hint ? '\n💡 ' + ch.hint : '');
+        expectedEl.className = 'output-expected wrong-bg';
+        AudioEngine.play('wrong');
+      }
+      document.getElementById('outputAnswer').disabled = true;
+      // Replace footer with "next" button
+      const footer = screen.querySelector('.game-footer');
+      const isLast = currentQ + 1 >= challenges.length;
+      footer.innerHTML = `<button class="btn btn-sm btn-cyan" id="outputNext">${isLast ? '查看成绩' : '下一题 ▸'}</button>`;
+      document.getElementById('outputNext').addEventListener('click', () => {
+        AudioEngine.play('click');
+        currentQ++;
+        if (currentQ < challenges.length) renderOutput();
+        else showResult('output', score, challenges.length * 20);
+      });
+    });
+
+    // Allow Enter to submit
+    document.getElementById('outputAnswer').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('outputSubmit').click();
+      }
+    });
+
+    showScreen('gameOutput');
+    setTimeout(() => document.getElementById('outputAnswer').focus(), 100);
+  }
+
+  renderOutput();
+}
+
+// ===================== MODE 9: FILL IN THE BLANKS (NEW) =====================
+const fillData = [
+  {
+    desc: '使用 for 循环计算阶乘 5!',
+    template: ['result = 1;', 'for i = ___:___', '    result = result ___ i;', 'end'],
+    blanks: ['2', '5', '*'],
+    display: ['result = 1;', 'for i = <BLANK>:<BLANK>', '    result = result <BLANK> i;', 'end'],
+    explain: '阶乘 5! = 1×2×3×4×5 = 120。result 初始为1，从 i=2 循环到 i=5，每次 result = result * i。'
+  },
+  {
+    desc: '生成等间距向量并绘制正弦曲线',
+    template: ['x = ___(0, 2*pi, 100);', 'y = ___(x);', '___(x, y);'],
+    blanks: ['linspace', 'sin', 'plot'],
+    display: ['x = <BLANK>(0, 2*pi, 100);', 'y = <BLANK>(x);', '<BLANK>(x, y);'],
+    explain: 'linspace 生成等间距向量，sin 计算正弦值，plot 将数据绘制成曲线图。这是 MATLAB 画图的标准流程。'
+  },
+  {
+    desc: '创建矩阵并提取子矩阵',
+    template: ['A = ___(4);', 'B = A(1:2, ___);', 'disp(___);'],
+    blanks: ['eye', '1:2', 'B'],
+    display: ['A = <BLANK>(4);', 'B = A(1:2, <BLANK>);', 'disp(<BLANK>);'],
+    explain: 'eye(4) 生成4阶单位矩阵。A(1:2, 1:2) 提取左上角2×2子矩阵。disp(B) 显示结果。'
+  },
+  {
+    desc: '解线性方程组 Ax = b',
+    template: ['A = [2 1; 5 3];', 'b = [4; 7];', 'x = A ___ b;'],
+    blanks: ['\\'],
+    display: ['A = [2 1; 5 3];', 'b = [4; 7];', 'x = A <BLANK> b;'],
+    explain: '在 MATLAB 中用反斜杠 \\ 求解线性方程组 Ax=b，即 x = A\\b。这比 inv(A)*b 更高效且数值更稳定。'
+  },
+  {
+    desc: '用条件语句判断一个数是正、负还是零',
+    template: ['x = -5;', '___ x > 0', "    disp('正数');", '___ x < 0', "    disp('负数');", '___', "    disp('零');", 'end'],
+    blanks: ['if', 'elseif', 'else'],
+    display: ['x = -5;', '<BLANK> x > 0', "    disp('正数');", '<BLANK> x < 0', "    disp('负数');", '<BLANK>', "    disp('零');", 'end'],
+    explain: 'if-elseif-else 是 MATLAB 的条件分支结构。依次判断条件，匹配则执行对应代码块。else 处理所有剩余情况。'
+  },
+  {
+    desc: '创建一个函数求两个数的最大公约数（使用递归）',
+    template: ['___ result = myGcd(a, b)', '    if b == 0', '        result = ___;', '    else', '        result = myGcd(b, ___(a, b));', '    end', 'end'],
+    blanks: ['function', 'a', 'mod'],
+    display: ['<BLANK> result = myGcd(a, b)', '    if b == 0', '        result = <BLANK>;', '    else', '        result = myGcd(b, <BLANK>(a, b));', '    end', 'end'],
+    explain: '辗转相除法：gcd(a,b) = gcd(b, mod(a,b))，当 b=0 时结果为 a。function 声明函数，mod 求余数。'
+  },
+  {
+    desc: '用 arrayfun 对数组元素应用函数',
+    template: ['f = @(x) x^2 + 2*x + 1;', 'v = 1:5;', 'result = ___(f, v);', '___(result);'],
+    blanks: ['arrayfun', 'disp'],
+    display: ['f = @(x) x^2 + 2*x + 1;', 'v = 1:5;', 'result = <BLANK>(f, v);', '<BLANK>(result);'],
+    explain: '@(x) 创建匿名函数。arrayfun 对数组每个元素应用函数，避免写 for 循环。disp 显示结果。'
+  },
+  {
+    desc: '读取文件数据并绘制图表',
+    template: ['data = ___(\'data.csv\');', 'x = data(:, 1);', 'y = data(:, ___);', 'plot(x, y);', '___("Data Plot");'],
+    blanks: ['readmatrix', '2', 'title'],
+    display: ['data = <BLANK>(\'data.csv\');', 'x = data(:, 1);', 'y = data(:, <BLANK>);', 'plot(x, y);', '<BLANK>("Data Plot");'],
+    explain: 'readmatrix 读取 CSV 文件为矩阵。data(:,1) 取第1列作为 x，data(:,2) 取第2列作为 y。title 设置图标题。'
+  },
+];
+
+function initFill() {
+  const screen = document.getElementById('gameFill');
+  const challenges = shuffle([...fillData]).slice(0, 5);
+  let currentQ = 0, score = 0;
+
+  function renderFill() {
+    const ch = challenges[currentQ];
+    let blankIdx = 0;
+    let codeHtml = '';
+    ch.display.forEach((line, lineIdx) => {
+      let processedLine = escHtml(line);
+      // Replace <BLANK> placeholders with input fields
+      while (processedLine.includes('&lt;BLANK&gt;')) {
+        processedLine = processedLine.replace('&lt;BLANK&gt;',
+          `<input class="fill-blank" data-blank="${blankIdx}" placeholder="?" style="width:${Math.max(60, ch.blanks[blankIdx].length * 12)}px">`);
+        blankIdx++;
+      }
+      codeHtml += processedLine + '\n';
+    });
+
+    screen.innerHTML = makeGameHeader('代码填空', 'gameFill',
+      `<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`
+    ) + `<div class="game-body">
+      <div class="fill-wrap">
+        <div class="fill-desc">✏️ ${ch.desc}</div>
+        <div class="fill-code-box">
+          <div class="output-code-header">
+            <span class="dot" style="background:#ff5f57;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#ffbd2e;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#28ca41;width:8px;height:8px;border-radius:50%"></span>
+            <span style="margin-left:.5rem">fill_blanks.m</span>
+          </div>
+          <div class="fill-code-body" id="fillCode">${codeHtml}</div>
+        </div>
+      </div>
+    </div>
+    <div class="game-footer">
+      <button class="btn btn-sm btn-cyan" id="fillSubmit">提交答案</button>
+    </div>`;
+
+    // Auto-focus first blank
+    const firstBlank = screen.querySelector('.fill-blank[data-blank="0"]');
+    if (firstBlank) setTimeout(() => firstBlank.focus(), 100);
+
+    // Tab between blanks
+    screen.querySelectorAll('.fill-blank').forEach(inp => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const next = +inp.dataset.blank + 1;
+          const nextEl = screen.querySelector(`.fill-blank[data-blank="${next}"]`);
+          if (nextEl) nextEl.focus();
+          else document.getElementById('fillSubmit').focus();
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.getElementById('fillSubmit').click();
+        }
+      });
+    });
+
+    document.getElementById('fillSubmit').addEventListener('click', () => {
+      const blanks = screen.querySelectorAll('.fill-blank');
+      let allCorrect = true;
+      blanks.forEach(inp => {
+        const idx = +inp.dataset.blank;
+        const userVal = inp.value.trim();
+        if (userVal === ch.blanks[idx]) {
+          inp.classList.add('correct');
+        } else {
+          inp.classList.add('wrong');
+          allCorrect = false;
+          // Show correct answer in tooltip-like fashion
+          inp.title = '正确答案: ' + ch.blanks[idx];
+          inp.value = ch.blanks[idx];
+          inp.style.fontSize = '.75rem';
+        }
+        inp.disabled = true;
+      });
+
+      if (allCorrect) {
+        AudioEngine.play('correct');
+        score += 20;
+        spawnParticles(window.innerWidth/2, window.innerHeight/2, '#00FF88', 15);
+      } else {
+        AudioEngine.play('wrong');
+      }
+
+      // Show explanation
+      if (ch.explain) {
+        const wrap = screen.querySelector('.fill-wrap');
+        const exp = document.createElement('div');
+        exp.style.cssText = 'margin-top:1rem;padding:1rem;background:#ff660015;border-left:3px solid var(--orange);border-radius:0 8px 8px 0;font-size:.8rem;color:var(--text);line-height:1.6';
+        exp.textContent = (allCorrect ? '✓ ' : '💡 ') + ch.explain;
+        wrap.appendChild(exp);
+      }
+
+      // Replace footer with "next" button
+      const footer = screen.querySelector('.game-footer');
+      const isLast = currentQ + 1 >= challenges.length;
+      footer.innerHTML = `<button class="btn btn-sm btn-cyan" id="fillNext">${isLast ? '查看成绩' : '下一题 ▸'}</button>`;
+      document.getElementById('fillNext').addEventListener('click', () => {
+        AudioEngine.play('click');
+        currentQ++;
+        if (currentQ < challenges.length) renderFill();
+        else showResult('fill', score, challenges.length * 20);
+      });
+    });
+
+    showScreen('gameFill');
+  }
+
+  renderFill();
+}
+
+// ===================== PER-MODE ENDLESS =====================
+function initModeEndless(modeId) {
+  const screen = document.getElementById('gameEndless');
+  let totalScore = 0, streak = 0, bestStreak = 0, questionNum = 0;
+  const modeInfo = modes.find(m => m.id === modeId);
+  const modeName = modeInfo ? modeInfo.name : modeId;
+  const modeIcon = modeInfo ? modeInfo.icon : '♾️';
+
+  function makeHeader() {
+    return makeGameHeader(`${modeName} · 无尽`, 'gameEndless',
+      `<span class="game-score">得分: ${totalScore}</span><span class="game-timer" style="color:var(--gold)">🔥 ${streak}</span><span class="game-timer">最佳: ${bestStreak}</span><span class="game-timer">#${questionNum}</span>`
+    );
+  }
+  function addNextBtn(container) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm btn-cyan';
+    btn.style.cssText = 'margin-top:.8rem';
+    btn.textContent = '下一题 ▸';
+    btn.addEventListener('click', () => { AudioEngine.play('click'); renderNext(); });
+    container.appendChild(btn);
+  }
+  function addExplain(container, text) {
+    if (!text) return;
+    const exp = document.createElement('div');
+    exp.style.cssText = 'margin-top:.8rem;padding:.6rem;background:#ff660015;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;font-size:.8rem;color:var(--text);line-height:1.5';
+    exp.textContent = '💡 ' + text;
+    container.appendChild(exp);
+  }
+  function onCorrect() {
+    AudioEngine.play('correct'); streak++;
+    if (streak > bestStreak) bestStreak = streak;
+    totalScore += 10 + Math.min(streak, 5);
+    spawnParticles(window.innerWidth/2, window.innerHeight/2, '#00FF88', 15);
+  }
+  function onWrong() { AudioEngine.play('wrong'); streak = 0; }
+
+  // Build pool for this mode
+  let pool = [], poolIdx = 0;
+  function resetPool(src) { pool = shuffle([...src]); poolIdx = 0; }
+  function next() { if (poolIdx >= pool.length) { pool = shuffle([...pool]); poolIdx = 0; } return pool[poolIdx++]; }
+
+  // ---- TERMINAL endless ----
+  function initTerminalEndless() {
+    resetPool(terminalTasks);
+    function render() {
+      const q = next(); questionNum++;
+      screen.innerHTML = makeHeader() + `<div class="game-body">
+        <div style="max-width:550px;width:100%">
+          <div class="terminal-wrap" style="background:var(--bg);border:1px solid #ffffff15;border-radius:8px;padding:1rem;max-height:none">
+            <div style="font-size:.75rem;color:var(--text2);margin-bottom:.8rem;font-family:'Fira Code'">% ${escHtml(q.prompt)}</div>
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <span style="color:var(--green);font-family:'Fira Code';font-size:.85rem">>></span>
+              <input type="text" id="elTermInput" style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'Fira Code';font-size:.85rem;caret-color:var(--orange)" autocomplete="off" autocorrect="off" spellcheck="false">
+            </div>
+            <div id="elArea" style="margin-top:.8rem"></div>
+          </div>
+        </div>
+      </div>
+      <div class="game-footer"><span style="font-size:.7rem;color:var(--text2)">输入 MATLAB 命令后按 Enter</span></div>`;
+      const input = document.getElementById('elTermInput');
+      const area = document.getElementById('elArea');
+      setTimeout(() => input.focus(), 100);
+      let answered = false;
+      input.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' || answered) return;
+        answered = true; input.disabled = true;
+        const val = input.value.trim().replace(/;$/, '');
+        const correct = val === q.answer || (q.alt && q.alt.includes(val));
+        const fb = document.createElement('div');
+        fb.style.cssText = 'font-family:"Fira Code";font-size:.85rem;margin-top:.3rem';
+        if (correct) { fb.innerHTML = '<span style="color:var(--green)">✓ 正确！</span>'; onCorrect(); }
+        else { fb.innerHTML = `<span style="color:var(--red)">✗ 错误</span> <span style="color:var(--text2)">正确答案: <span style="color:var(--green)">${escHtml(q.answer)}</span></span>`; onWrong(); }
+        area.appendChild(fb);
+        addExplain(area, q.explain);
+        addNextBtn(area);
+      });
+      showScreen('gameEndless');
+    }
+    return render;
+  }
+
+  // ---- OUTPUT endless ----
+  function initOutputEndless() {
+    resetPool(outputData);
+    function render() {
+      const q = next(); questionNum++;
+      screen.innerHTML = makeHeader() + `<div class="game-body">
+        <div class="output-wrap" style="max-width:550px">
+          <div class="output-code-box">
+            <div class="output-code-header">
+              <span class="dot" style="background:#ff5f57;width:8px;height:8px;border-radius:50%"></span>
+              <span class="dot" style="background:#ffbd2e;width:8px;height:8px;border-radius:50%"></span>
+              <span class="dot" style="background:#28ca41;width:8px;height:8px;border-radius:50%"></span>
+              <span style="margin-left:.5rem">predict.m</span>
+            </div>
+            <div class="output-code-body">${escHtml(q.code)}</div>
+          </div>
+          <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center">
+            <span style="font-size:.8rem;color:var(--text2)">输出 =</span>
+            <input type="text" id="elOutInput" style="flex:1;background:var(--bg);border:1px solid #ffffff20;border-radius:6px;padding:.5rem .8rem;color:var(--text);font-family:'Fira Code';font-size:.85rem;outline:none" autocomplete="off" placeholder="输入程序输出...">
+            <button class="btn btn-sm btn-cyan" id="elOutSubmit">提交</button>
+          </div>
+          <div id="elArea" style="margin-top:.8rem"></div>
+        </div>
+      </div>
+      <div class="game-footer"><span style="font-size:.7rem;color:var(--text2)">预测代码的输出结果</span></div>`;
+      const input = document.getElementById('elOutInput');
+      const submitBtn = document.getElementById('elOutSubmit');
+      const area = document.getElementById('elArea');
+      setTimeout(() => input.focus(), 100);
+      let answered = false;
+      function doSubmit() {
+        if (answered) return; answered = true;
+        const val = input.value.trim();
+        const alts = q.altAnswers || [];
+        const correct = val === q.answer || alts.includes(val);
+        input.disabled = true; submitBtn.disabled = true;
+        const fb = document.createElement('div');
+        fb.style.cssText = 'font-size:.85rem;margin-top:.3rem';
+        if (correct) { fb.innerHTML = '<span style="color:var(--green)">✓ 正确！</span>'; onCorrect(); }
+        else { fb.innerHTML = `<span style="color:var(--red)">✗ 错误</span> <span style="color:var(--text2)">正确答案: <span style="color:var(--green)">${escHtml(q.answer)}</span></span>`; onWrong(); }
+        area.appendChild(fb);
+        addExplain(area, q.hint || '');
+        addNextBtn(area);
+      }
+      submitBtn.addEventListener('click', doSubmit);
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
+      showScreen('gameEndless');
+    }
+    return render;
+  }
+
+  // ---- FILL endless ----
+  function initFillEndless() {
+    resetPool(fillData);
+    function render() {
+      const q = next(); questionNum++;
+      let blankIdx = 0, codeHtml = '';
+      q.display.forEach(line => {
+        let p = escHtml(line);
+        while (p.includes('&lt;BLANK&gt;')) {
+          p = p.replace('&lt;BLANK&gt;', `<input class="fill-blank" data-blank="${blankIdx}" placeholder="?" style="width:${Math.max(60, q.blanks[blankIdx].length * 12)}px">`);
+          blankIdx++;
+        }
+        codeHtml += p + '\n';
+      });
+      screen.innerHTML = makeHeader() + `<div class="game-body">
+        <div class="fill-wrap" style="max-width:550px;width:100%">
+          <div class="fill-desc">✏️ ${q.desc}</div>
+          <div class="fill-code-box">
+            <div class="output-code-header">
+              <span class="dot" style="background:#ff5f57;width:8px;height:8px;border-radius:50%"></span>
+              <span class="dot" style="background:#ffbd2e;width:8px;height:8px;border-radius:50%"></span>
+              <span class="dot" style="background:#28ca41;width:8px;height:8px;border-radius:50%"></span>
+              <span style="margin-left:.5rem">fill_blanks.m</span>
+            </div>
+            <div class="fill-code-body">${codeHtml}</div>
+          </div>
+          <div id="elArea" style="margin-top:.8rem"></div>
+        </div>
+      </div>
+      <div class="game-footer"><button class="btn btn-sm btn-cyan" id="elFillSubmit">提交答案</button></div>`;
+      const firstBlank = screen.querySelector('.fill-blank[data-blank="0"]');
+      if (firstBlank) setTimeout(() => firstBlank.focus(), 100);
+      screen.querySelectorAll('.fill-blank').forEach(inp => {
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Tab') { e.preventDefault(); const nx = screen.querySelector(`.fill-blank[data-blank="${+inp.dataset.blank+1}"]`); if (nx) nx.focus(); else document.getElementById('elFillSubmit').focus(); }
+          if (e.key === 'Enter') { e.preventDefault(); document.getElementById('elFillSubmit').click(); }
+        });
+      });
+      document.getElementById('elFillSubmit').addEventListener('click', () => {
+        const blanks = screen.querySelectorAll('.fill-blank');
+        let allCorrect = true;
+        blanks.forEach(inp => {
+          const idx = +inp.dataset.blank;
+          if (inp.value.trim() === q.blanks[idx]) { inp.classList.add('correct'); }
+          else { inp.classList.add('wrong'); allCorrect = false; inp.title = '正确答案: ' + q.blanks[idx]; inp.value = q.blanks[idx]; inp.style.fontSize = '.75rem'; }
+          inp.disabled = true;
+        });
+        if (allCorrect) onCorrect(); else onWrong();
+        const area = document.getElementById('elArea');
+        addExplain(area, q.explain);
+        addNextBtn(area);
+        document.getElementById('elFillSubmit').remove();
+      });
+      showScreen('gameEndless');
+    }
+    return render;
+  }
+
+  // ---- BUGHUNTER endless ----
+  function initBugHunterEndless() {
+    resetPool(bugHunterData);
+    function render() {
+      const q = next(); questionNum++;
+      screen.innerHTML = makeHeader() + `<div class="game-body">
+        <div class="bughunter-wrap" style="max-width:550px;width:100%">
+          <div class="bh-desc">🐛 ${q.desc}</div>
+          <div class="bh-editor">
+            <div class="bh-editor-header">
+              <span class="dot" style="background:#ff5f57"></span>
+              <span class="dot" style="background:#ffbd2e"></span>
+              <span class="dot" style="background:#28ca41"></span>
+              <span style="margin-left:.5rem">buggy_code.m</span>
+            </div>
+            <div class="bh-lines" id="elBHLines"></div>
+          </div>
+          <div id="elArea" style="margin-top:.8rem"></div>
+        </div>
+      </div>
+      <div class="game-footer"><button class="btn btn-sm btn-cyan" id="elBHSubmit">提交（点击选中有bug的行）</button></div>`;
+      const linesEl = document.getElementById('elBHLines');
+      const selected = new Set();
+      q.code.forEach((line, idx) => {
+        const el = document.createElement('div');
+        el.className = 'bh-line';
+        el.innerHTML = `<span class="bh-ln">${idx+1}</span><span class="bh-code">${escHtml(line)}</span>`;
+        el.addEventListener('click', () => { el.classList.toggle('selected'); if (selected.has(idx)) selected.delete(idx); else selected.add(idx); });
+        linesEl.appendChild(el);
+      });
+      document.getElementById('elBHSubmit').addEventListener('click', () => {
+        linesEl.querySelectorAll('.bh-line').forEach(l => l.style.pointerEvents = 'none');
+        let correct = selected.size === q.bugs.length && q.bugs.every(b => selected.has(b));
+        q.bugs.forEach(b => linesEl.querySelectorAll('.bh-line')[b].classList.add('correct-bug'));
+        if (correct) onCorrect(); else onWrong();
+        const area = document.getElementById('elArea');
+        addExplain(area, q.explain);
+        addNextBtn(area);
+        document.getElementById('elBHSubmit').remove();
+      });
+      showScreen('gameEndless');
+    }
+    return render;
+  }
+
+  // ---- MATRIX endless ----
+  function initMatrixEndless() {
+    let src = generateMatrixChallenges();
+    pool = shuffle([...src]); poolIdx = 0;
+    function render() {
+      if (poolIdx >= pool.length) { src = generateMatrixChallenges(); pool = shuffle([...src]); poolIdx = 0; }
+      const ch = pool[poolIdx++]; questionNum++;
+      let matHtml = '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;justify-content:center">';
+      matHtml += renderMatHtml(ch.matA, 'var(--cyan)');
+      if (ch.op && ch.matB) { matHtml += `<span style="font-size:1.2rem;color:var(--orange)">${ch.op}</span>`; matHtml += renderMatHtml(ch.matB, 'var(--purple)'); }
+      matHtml += '</div>';
+      let inputHtml = '';
+      if (ch.answerType === 'matrix') {
+        const rows = ch.answer.length, cols = ch.answer[0].length;
+        inputHtml = `<div class="matrix-grid" style="grid-template-columns:repeat(${cols},48px);margin-top:1rem;justify-content:center">` +
+          ch.answer.map((r,ri) => r.map((c,ci) => `<input class="matrix-input-cell" data-r="${ri}" data-c="${ci}" type="number" style="width:48px;height:48px;background:var(--bg);border:1px solid #ffffff20;border-radius:6px;color:var(--text);text-align:center;font-family:'Fira Code';font-size:.9rem;outline:none">`).join('')).join('') + '</div>';
+      } else {
+        inputHtml = `<div style="margin-top:1rem;text-align:center"><input type="number" id="elMatScalar" style="width:120px;height:48px;background:var(--bg);border:1px solid #ffffff20;border-radius:6px;color:var(--text);text-align:center;font-family:'Fira Code';font-size:1rem;outline:none" placeholder="?"></div>`;
+      }
+      screen.innerHTML = makeHeader() + `<div class="game-body">
+        <div class="matrix-wrap" style="max-width:550px;width:100%">
+          <div style="font-size:.85rem;color:var(--text);margin-bottom:.8rem;text-align:center">${ch.question}</div>
+          ${matHtml}
+          ${inputHtml}
+          <div id="elArea" style="margin-top:.8rem;text-align:center"></div>
+        </div>
+      </div>
+      <div class="game-footer"><button class="btn btn-sm btn-cyan" id="elMatSubmit">提交答案</button></div>`;
+      document.getElementById('elMatSubmit').addEventListener('click', () => {
+        let correct = true;
+        if (ch.answerType === 'matrix') {
+          screen.querySelectorAll('.matrix-input-cell').forEach(inp => {
+            const r = +inp.dataset.r, c = +inp.dataset.c;
+            if (+inp.value !== ch.answer[r][c]) { correct = false; inp.style.borderColor = 'var(--red)'; }
+            else inp.style.borderColor = 'var(--green)';
+            inp.disabled = true;
+          });
+        } else {
+          const inp = document.getElementById('elMatScalar');
+          if (+inp.value !== ch.answer) { correct = false; inp.style.borderColor = 'var(--red)'; }
+          else inp.style.borderColor = 'var(--green)';
+          inp.disabled = true;
+        }
+        if (correct) onCorrect(); else onWrong();
+        const area = document.getElementById('elArea');
+        if (!correct) {
+          const ans = document.createElement('div');
+          ans.style.cssText = 'margin-bottom:.5rem;font-family:"Fira Code";font-size:.85rem;color:var(--green)';
+          ans.textContent = '正确答案: ' + (ch.answerType === 'matrix' ? '[' + ch.answer.map(r => r.join(' ')).join('; ') + ']' : ch.answer);
+          area.appendChild(ans);
+        }
+        addExplain(area, ch.explain);
+        addNextBtn(area);
+        document.getElementById('elMatSubmit').remove();
+      });
+      showScreen('gameEndless');
+    }
+    return render;
+  }
+
+  function renderMatHtml(mat, color) {
+    const rows = mat.length, cols = mat[0].length;
+    let html = `<div class="matrix-grid" style="grid-template-columns:repeat(${cols},48px)">`;
+    mat.forEach(row => row.forEach(v => { html += `<div class="matrix-cell" style="color:${color}">${v}</div>`; }));
+    html += '</div>';
+    return html;
+  }
+
+  // ---- CODEBUILDER endless ----
+  function initCodeBuilderEndless() {
+    resetPool(codeBuilderData);
+    function render() {
+      const ch = next(); questionNum++;
+      ch.shuffled = shuffle([...ch.lines]);
+      let dragIdx = null;
+      screen.innerHTML = makeHeader() + `<div class="game-body">
+        <div class="codebuilder-wrap" style="max-width:550px;width:100%">
+          <div style="font-size:.85rem;color:var(--text);margin-bottom:.8rem">📋 ${ch.task}</div>
+          <div id="elCBSlots"></div>
+          <div id="elArea" style="margin-top:.8rem"></div>
+        </div>
+      </div>
+      <div class="game-footer">
+        <button class="btn btn-sm btn-green" id="elCBReset">🔄 重排</button>
+        <button class="btn btn-sm btn-cyan" id="elCBSubmit" style="margin-left:.5rem">提交</button>
+      </div>`;
+      function renderSlots() {
+        const slotsEl = document.getElementById('elCBSlots');
+        slotsEl.innerHTML = '';
+        ch.shuffled.forEach((line, i) => {
+          const slot = document.createElement('div');
+          slot.className = 'code-slot';
+          slot.draggable = true;
+          slot.innerHTML = `<span class="slot-handle">☰</span><code>${escHtml(line)}</code>`;
+          slot.addEventListener('dragstart', () => { dragIdx = i; slot.style.opacity = '.4'; });
+          slot.addEventListener('dragend', () => { slot.style.opacity = '1'; });
+          slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+          slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+          slot.addEventListener('drop', e => {
+            e.preventDefault(); slot.classList.remove('drag-over');
+            if (dragIdx !== null && dragIdx !== i) {
+              const temp = ch.shuffled[dragIdx]; ch.shuffled[dragIdx] = ch.shuffled[i]; ch.shuffled[i] = temp;
+              renderSlots();
+            }
+          });
+          // Touch support
+          let touchStartY;
+          slot.addEventListener('touchstart', e => { dragIdx = i; touchStartY = e.touches[0].clientY; slot.style.opacity = '.6'; });
+          slot.addEventListener('touchmove', e => { e.preventDefault(); }, {passive:false});
+          slot.addEventListener('touchend', e => {
+            slot.style.opacity = '1';
+            const endY = e.changedTouches[0].clientY;
+            const diff = endY - touchStartY;
+            if (Math.abs(diff) > 30) {
+              const dir = diff > 0 ? 1 : -1;
+              const target = i + dir;
+              if (target >= 0 && target < ch.shuffled.length) {
+                const temp = ch.shuffled[i]; ch.shuffled[i] = ch.shuffled[target]; ch.shuffled[target] = temp;
+                renderSlots();
+              }
+            }
+          });
+          slotsEl.appendChild(slot);
+        });
+      }
+      renderSlots();
+      document.getElementById('elCBReset').addEventListener('click', () => { AudioEngine.play('click'); ch.shuffled = shuffle([...ch.lines]); renderSlots(); });
+      document.getElementById('elCBSubmit').addEventListener('click', () => {
+        let correct = ch.shuffled.every((l, i) => l === ch.lines[i]);
+        if (correct) onCorrect(); else onWrong();
+        const area = document.getElementById('elArea');
+        if (!correct) {
+          const box = document.createElement('div');
+          box.style.cssText = 'padding:.8rem;background:#00ff8808;border:1px solid var(--green);border-radius:8px;margin-bottom:.5rem';
+          box.innerHTML = '<div style="font-size:.7rem;color:var(--green);font-family:Orbitron;margin-bottom:.3rem">▾ 正确顺序</div>' +
+            ch.lines.map((l,i) => `<div style="font-family:'Fira Code';font-size:.8rem;color:var(--text);padding:.2rem .4rem;background:var(--bg2);border-radius:4px;margin-bottom:2px"><span style="color:var(--green);margin-right:.4rem">${i+1}.</span>${escHtml(l)}</div>`).join('');
+          area.appendChild(box);
+        }
+        addExplain(area, ch.explain);
+        addNextBtn(area);
+        document.getElementById('elCBSubmit').remove();
+        document.getElementById('elCBReset').remove();
+      });
+      showScreen('gameEndless');
+    }
+    return render;
+  }
+
+  // ---- PLOT endless ----
+  function initPlotEndless() {
+    resetPool(plotData);
+    function render() {
+      const ch = next(); questionNum++;
+      screen.innerHTML = makeHeader() + `<div class="game-body">
+        <div style="max-width:550px;width:100%;text-align:center">
+          <canvas id="elPlotCanvas" width="300" height="200" style="background:var(--bg);border:1px solid #ffffff15;border-radius:8px;max-width:100%"></canvas>
+          <div class="plot-options" id="elArea" style="margin-top:1rem"></div>
+        </div>
+      </div>
+      <div class="game-footer"><span style="font-size:.7rem;color:var(--text2)">选择能生成此图的命令</span></div>`;
+      const canvas = document.getElementById('elPlotCanvas');
+      const ctx = canvas.getContext('2d');
+      ch.draw(ctx, canvas.width, canvas.height);
+      const area = document.getElementById('elArea');
+      const opts = shuffle([...ch.options]);
+      const correctIdx = opts.indexOf(ch.correct);
+      opts.forEach((o, i) => {
+        const opt = document.createElement('div');
+        opt.className = 'plot-option'; opt.textContent = o;
+        opt.addEventListener('click', () => {
+          area.querySelectorAll('.plot-option').forEach(el => el.style.pointerEvents = 'none');
+          if (o === ch.correct) { opt.classList.add('correct'); onCorrect(); }
+          else { opt.classList.add('wrong'); onWrong(); area.querySelectorAll('.plot-option').forEach(el => { if (el.textContent === ch.correct) el.classList.add('correct'); }); }
+          addExplain(area, ch.explain);
+          addNextBtn(area);
+        });
+        area.appendChild(opt);
+      });
+      showScreen('gameEndless');
+    }
+    return render;
+  }
+
+  // ---- MAZE endless (choice questions only, no maze grid) ----
+  function initMazeEndless() {
+    resetPool(mazeQData);
+    function render() {
+      const q = next(); questionNum++;
+      screen.innerHTML = makeHeader() + `<div class="game-body">
+        <div class="output-wrap" style="max-width:550px">
+          <div class="output-code-box">
+            <div class="output-code-header">
+              <span class="dot" style="background:#ff5f57;width:8px;height:8px;border-radius:50%"></span>
+              <span class="dot" style="background:#ffbd2e;width:8px;height:8px;border-radius:50%"></span>
+              <span class="dot" style="background:#28ca41;width:8px;height:8px;border-radius:50%"></span>
+              <span style="margin-left:.5rem">maze_challenge.m</span>
+            </div>
+            <div class="output-code-body">${escHtml(q.code)}</div>
+          </div>
+          <div class="plot-options" id="elArea" style="margin-top:1rem"></div>
+        </div>
+      </div>
+      <div class="game-footer"><span style="font-size:.7rem;color:var(--text2)">选择正确的输出结果</span></div>`;
+      const area = document.getElementById('elArea');
+      q.options.forEach((o, i) => {
+        const opt = document.createElement('div');
+        opt.className = 'plot-option'; opt.textContent = o;
+        opt.addEventListener('click', () => {
+          area.querySelectorAll('.plot-option').forEach(el => el.style.pointerEvents = 'none');
+          if (i === q.correct) { opt.classList.add('correct'); onCorrect(); }
+          else { opt.classList.add('wrong'); onWrong(); area.querySelectorAll('.plot-option')[q.correct].classList.add('correct'); }
+          addExplain(area, q.explain);
+          addNextBtn(area);
+        });
+        area.appendChild(opt);
+      });
+      showScreen('gameEndless');
+    }
+    return render;
+  }
+
+  // Dispatch
+  let renderNext;
+  switch (modeId) {
+    case 'terminal':    renderNext = initTerminalEndless(); break;
+    case 'output':      renderNext = initOutputEndless(); break;
+    case 'fill':        renderNext = initFillEndless(); break;
+    case 'bughunter':   renderNext = initBugHunterEndless(); break;
+    case 'matrix':      renderNext = initMatrixEndless(); break;
+    case 'codebuilder': renderNext = initCodeBuilderEndless(); break;
+    case 'plot':        renderNext = initPlotEndless(); break;
+    case 'maze':        renderNext = initMazeEndless(); break;
+    default:            renderNext = initTerminalEndless(); break;
+  }
+  renderNext();
+}
+
+// ===================== MODE 10: ENDLESS MODE (MULTI-TYPE) =====================
+function initEndless() {
+  const screen = document.getElementById('gameEndless');
+  let totalScore = 0, streak = 0, bestStreak = 0, questionNum = 0;
+
+  // Build unified question pool with MULTIPLE question types
+  const allQuestions = [];
+
+  // TYPE 1: choice - from mazeQData
+  mazeQData.forEach(q => allQuestions.push({
+    type: 'choice', category: '输出预测',
+    prompt: q.code, options: [...q.options], correct: q.correct, explain: q.explain
+  }));
+
+  // TYPE 2: terminal - keep as typing questions (original format!)
+  terminalTasks.forEach(t => allQuestions.push({
+    type: 'terminal', category: '极速终端',
+    prompt: t.prompt, answer: t.answer, alt: t.alt || [], explain: t.explain
+  }));
+
+  // TYPE 3: output - typing the output
+  outputData.forEach(o => allQuestions.push({
+    type: 'output', category: '输出预测',
+    code: o.code, answer: o.answer, altAnswers: o.altAnswers || [], explain: o.hint || ''
+  }));
+
+  // TYPE 4: fill - from fillData
+  fillData.forEach(f => allQuestions.push({
+    type: 'fill', category: '代码填空',
+    desc: f.desc, display: [...f.display], blanks: [...f.blanks], explain: f.explain
+  }));
+
+  // TYPE 5: bughunter - from bugHunterData
+  bugHunterData.forEach(b => allQuestions.push({
+    type: 'bughunter', category: 'Bug猎人',
+    desc: b.desc, code: [...b.code], bugs: [...b.bugs], explain: b.explain
+  }));
+
+  // TYPE 6: choice - extra questions for variety
+  const extraQuestions = [
+    { prompt: 'A = magic(3);\ndisp(sum(A(:)))', options: ['45', '15', '34', '9'], correct: 0, explain: 'magic(3) 生成3阶魔方阵，所有元素之和 = 1+2+...+9 = 45。' },
+    { prompt: 'x = [1 2 3 4 5];\ndisp(mean(x))', options: ['3', '5', '15', '2.5'], correct: 0, explain: 'mean 求平均值：(1+2+3+4+5)/5 = 3。' },
+    { prompt: 'A = [1 0; 0 1];\ndisp(rank(A))', options: ['2', '1', '0', '4'], correct: 0, explain: '2×2单位矩阵的秩 = 2，因为两行/列线性无关。' },
+    { prompt: 'v = [3 1 4 1 5];\ndisp(median(v))', options: ['3', '1', '4', '2.5'], correct: 0, explain: 'median 求中位数：排序后 [1 1 3 4 5]，中间值为3。' },
+    { prompt: 'A = [1 2; 3 4];\nB = A.^2;\ndisp(B(2,1))', options: ['9', '3', '6', '4'], correct: 0, explain: '.^2 是逐元素平方：3^2 = 9。B(2,1) = 9。' },
+    { prompt: 'x = pi;\ndisp(round(sin(x)))', options: ['0', '1', '-1', '3'], correct: 0, explain: 'sin(pi) ≈ 0（极小的浮点数），round 四舍五入后 = 0。' },
+    { prompt: 'v = 1:10;\ndisp(v(end/2))', options: ['5', '10', '6', '1'], correct: 0, explain: 'v 有10个元素，end=10，end/2=5，v(5)=5。' },
+    { prompt: 'A = [1 2 3; 4 5 6];\ndisp(numel(A))', options: ['6', '2', '3', '5'], correct: 0, explain: 'numel 返回矩阵元素总数。2×3 = 6个元素。' },
+    { prompt: 'x = -3;\ndisp(abs(x))', options: ['3', '-3', '0', '9'], correct: 0, explain: 'abs 返回绝对值：|-3| = 3。' },
+    { prompt: 'v = [10 20 30];\ndisp(fliplr(v))', options: ['[30 20 10]', '[10 20 30]', '[20 30 10]', '错误'], correct: 0, explain: 'fliplr 左右翻转向量/矩阵：[10 20 30] → [30 20 10]。' },
+    { prompt: 'A = [4 7; 2 6];\ndisp(trace(A))', options: ['10', '11', '6', '4'], correct: 0, explain: 'trace 返回矩阵的迹（对角线元素之和）：4+6 = 10。' },
+    { prompt: 'x = 16;\ndisp(sqrt(x))', options: ['4', '8', '256', '2'], correct: 0, explain: 'sqrt 求平方根：√16 = 4。' },
+    { prompt: 'v = [2 4 6 8];\ndisp(cumsum(v))', options: ['[2 6 12 20]', '[2 4 6 8]', '[20 18 14 8]', '[8 6 4 2]'], correct: 0, explain: 'cumsum 求累积和：[2, 2+4, 2+4+6, 2+4+6+8] = [2 6 12 20]。' },
+    { prompt: 'A = zeros(3,2);\ndisp(size(A,1))', options: ['3', '2', '6', '0'], correct: 0, explain: 'size(A,1) 返回第1个维度（行数）= 3。' },
+    { prompt: "s = 'Hello World';\ndisp(upper(s))", options: ['HELLO WORLD', 'hello world', 'Hello World', '错误'], correct: 0, explain: 'upper 将所有字母转为大写。' },
+    { prompt: 'x = [true false true];\ndisp(sum(x))', options: ['2', '3', '1', 'true'], correct: 0, explain: 'MATLAB 中 true=1, false=0，sum 求和 = 1+0+1 = 2。' },
+    { prompt: 'A = [1 2; 3 4];\ndisp(A(:))', options: ['[1;3;2;4]', '[1;2;3;4]', '[1 2 3 4]', '[4;3;2;1]'], correct: 0, explain: 'A(:) 按列展开矩阵为列向量：先第1列[1;3]再第2列[2;4] → [1;3;2;4]。' },
+    { prompt: 'x = 7;\ndisp(mod(x, 3))', options: ['1', '2', '0', '3'], correct: 0, explain: 'mod(7,3) = 7 除以 3 的余数 = 1。' },
+    { prompt: 'v = [5 3 8 1];\n[~, idx] = min(v);\ndisp(idx)', options: ['4', '1', '3', '2'], correct: 0, explain: '最小值1在第4个位置，~ 忽略最小值本身，idx=4。' },
+    { prompt: 'A = repmat([1 2], 2, 3);\ndisp(size(A))', options: ['[2 6]', '[4 6]', '[2 3]', '[1 2]'], correct: 0, explain: 'repmat 将 [1 2] 沿行复制2次、列复制3次：2行×(2×3)=6列 → size = [2 6]。' },
+  ];
+  extraQuestions.forEach(q => allQuestions.push({
+    type: 'choice', category: '综合挑战',
+    prompt: q.prompt, options: q.options, correct: q.correct, explain: q.explain
+  }));
+
+  let pool = shuffle([...allQuestions]);
+  let poolIdx = 0;
+
+  function getNextQuestion() {
+    if (poolIdx >= pool.length) {
+      pool = shuffle([...allQuestions]);
+      poolIdx = 0;
+    }
+    return pool[poolIdx++];
+  }
+
+  function makeHeader() {
+    return makeGameHeader('无尽模式 ♾️', 'gameEndless',
+      `<span class="game-score">得分: ${totalScore}</span><span class="game-timer" style="color:var(--gold)">🔥 ${streak}</span><span class="game-timer">最佳: ${bestStreak}</span><span class="game-timer">#${questionNum}</span>`
+    );
+  }
+
+  function addNextBtn(container) {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-sm btn-cyan';
+    nextBtn.style.cssText = 'margin-top:.8rem';
+    nextBtn.textContent = '下一题 ▸';
+    nextBtn.addEventListener('click', () => { AudioEngine.play('click'); renderEndless(); });
+    container.appendChild(nextBtn);
+  }
+
+  function addExplain(container, text) {
+    if (!text) return;
+    const exp = document.createElement('div');
+    exp.style.cssText = 'margin-top:.8rem;padding:.6rem;background:#ff660015;border-left:3px solid var(--orange);border-radius:0 6px 6px 0;font-size:.8rem;color:var(--text);line-height:1.5';
+    exp.textContent = '💡 ' + text;
+    container.appendChild(exp);
+  }
+
+  function onCorrect() {
+    AudioEngine.play('correct');
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+    const bonus = Math.min(streak, 5);
+    totalScore += 10 + bonus;
+    spawnParticles(window.innerWidth/2, window.innerHeight/2, '#00FF88', 15);
+  }
+  function onWrong() { AudioEngine.play('wrong'); streak = 0; }
+
+  // ---- Render by question type ----
+
+  function renderChoice(q) {
+    screen.innerHTML = makeHeader() + `<div class="game-body">
+      <div class="output-wrap" style="max-width:550px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+          <span style="font-size:.65rem;color:var(--cyan);font-family:Orbitron;letter-spacing:.1em">${q.category}</span>
+          <span style="font-size:.65rem;color:var(--text2)">选择题</span>
+        </div>
+        <div class="output-code-box">
+          <div class="output-code-header">
+            <span class="dot" style="background:#ff5f57;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#ffbd2e;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#28ca41;width:8px;height:8px;border-radius:50%"></span>
+            <span style="margin-left:.5rem">challenge.m</span>
+          </div>
+          <div class="output-code-body">${escHtml(q.prompt)}</div>
+        </div>
+        <div class="plot-options" id="endlessArea" style="margin-top:1rem"></div>
+      </div>
+    </div>
+    <div class="game-footer"><span style="font-size:.7rem;color:var(--text2)">连续答对额外加分</span></div>`;
+
+    const area = document.getElementById('endlessArea');
+    q.options.forEach((o, i) => {
+      const opt = document.createElement('div');
+      opt.className = 'plot-option'; opt.textContent = o;
+      opt.addEventListener('click', () => {
+        area.querySelectorAll('.plot-option').forEach(el => el.style.pointerEvents = 'none');
+        if (i === q.correct) { opt.classList.add('correct'); onCorrect(); }
+        else { opt.classList.add('wrong'); onWrong(); area.querySelectorAll('.plot-option').forEach(el => { if (el.textContent === q.options[q.correct]) el.classList.add('correct'); }); }
+        addExplain(area, q.explain);
+        addNextBtn(area);
+      });
+      area.appendChild(opt);
+    });
+  }
+
+  function renderTerminal(q) {
+    screen.innerHTML = makeHeader() + `<div class="game-body">
+      <div style="max-width:550px;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+          <span style="font-size:.65rem;color:var(--cyan);font-family:Orbitron;letter-spacing:.1em">极速终端</span>
+          <span style="font-size:.65rem;color:var(--text2)">输入命令</span>
+        </div>
+        <div class="terminal-wrap" style="background:var(--bg);border:1px solid #ffffff15;border-radius:8px;padding:1rem;max-height:none">
+          <div style="font-size:.75rem;color:var(--text2);margin-bottom:.8rem;font-family:'Fira Code'">% ${escHtml(q.prompt)}</div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span style="color:var(--green);font-family:'Fira Code';font-size:.85rem">>></span>
+            <input type="text" id="endlessTermInput" style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'Fira Code';font-size:.85rem;caret-color:var(--orange)" autocomplete="off" autocorrect="off" spellcheck="false">
+          </div>
+          <div id="endlessArea" style="margin-top:.8rem"></div>
+        </div>
+      </div>
+    </div>
+    <div class="game-footer"><span style="font-size:.7rem;color:var(--text2)">输入 MATLAB 命令后按 Enter</span></div>`;
+
+    const input = document.getElementById('endlessTermInput');
+    const area = document.getElementById('endlessArea');
+    setTimeout(() => input.focus(), 100);
+
+    let answered = false;
+    input.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' || answered) return;
+      answered = true;
+      const val = input.value.trim().replace(/;$/, '');
+      const correct = val === q.answer || val === q.answer + ';' || (q.alt && q.alt.includes(val)) || (q.alt && q.alt.includes(val + ';'));
+      input.disabled = true;
+      const fb = document.createElement('div');
+      fb.style.cssText = 'font-family:"Fira Code";font-size:.85rem;margin-top:.3rem';
+      if (correct) {
+        fb.innerHTML = '<span style="color:var(--green)">✓ 正确！</span>';
+        onCorrect();
+      } else {
+        fb.innerHTML = `<span style="color:var(--red)">✗ 错误</span><span style="color:var(--text2);margin-left:.5rem">正确答案: <span style="color:var(--green)">${escHtml(q.answer)}</span></span>`;
+        onWrong();
+      }
+      area.appendChild(fb);
+      addExplain(area, q.explain);
+      addNextBtn(area);
+    });
+  }
+
+  function renderOutput(q) {
+    screen.innerHTML = makeHeader() + `<div class="game-body">
+      <div class="output-wrap" style="max-width:550px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+          <span style="font-size:.65rem;color:var(--cyan);font-family:Orbitron;letter-spacing:.1em">输出预测</span>
+          <span style="font-size:.65rem;color:var(--text2)">输入输出</span>
+        </div>
+        <div class="output-code-box">
+          <div class="output-code-header">
+            <span class="dot" style="background:#ff5f57;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#ffbd2e;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#28ca41;width:8px;height:8px;border-radius:50%"></span>
+            <span style="margin-left:.5rem">predict.m</span>
+          </div>
+          <div class="output-code-body">${escHtml(q.code)}</div>
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:.5rem;align-items:center">
+          <span style="font-size:.8rem;color:var(--text2)">输出 =</span>
+          <input type="text" id="endlessOutputInput" style="flex:1;background:var(--bg);border:1px solid #ffffff20;border-radius:6px;padding:.5rem .8rem;color:var(--text);font-family:'Fira Code';font-size:.85rem;outline:none" autocomplete="off" placeholder="输入程序输出...">
+          <button class="btn btn-sm btn-cyan" id="endlessOutputSubmit">提交</button>
+        </div>
+        <div id="endlessArea" style="margin-top:.8rem"></div>
+      </div>
+    </div>
+    <div class="game-footer"><span style="font-size:.7rem;color:var(--text2)">预测代码的输出结果</span></div>`;
+
+    const input = document.getElementById('endlessOutputInput');
+    const submitBtn = document.getElementById('endlessOutputSubmit');
+    const area = document.getElementById('endlessArea');
+    setTimeout(() => input.focus(), 100);
+
+    let answered = false;
+    function doSubmit() {
+      if (answered) return;
+      answered = true;
+      const val = input.value.trim();
+      const alts = q.altAnswers || [];
+      const correct = val === q.answer || alts.includes(val);
+      input.disabled = true; submitBtn.disabled = true;
+      const fb = document.createElement('div');
+      fb.style.cssText = 'font-size:.85rem;margin-top:.3rem';
+      if (correct) {
+        fb.innerHTML = '<span style="color:var(--green)">✓ 正确！</span>';
+        onCorrect();
+      } else {
+        fb.innerHTML = `<span style="color:var(--red)">✗ 错误</span> <span style="color:var(--text2)">正确答案: <span style="color:var(--green)">${escHtml(q.answer)}</span></span>`;
+        onWrong();
+      }
+      area.appendChild(fb);
+      addExplain(area, q.explain);
+      addNextBtn(area);
+    }
+    submitBtn.addEventListener('click', doSubmit);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') doSubmit(); });
+  }
+
+  function renderFill(q) {
+    let blankIdx = 0;
+    let codeHtml = '';
+    q.display.forEach(line => {
+      let processed = escHtml(line);
+      while (processed.includes('&lt;BLANK&gt;')) {
+        processed = processed.replace('&lt;BLANK&gt;',
+          `<input class="fill-blank" data-blank="${blankIdx}" placeholder="?" style="width:${Math.max(60, q.blanks[blankIdx].length * 12)}px">`);
+        blankIdx++;
+      }
+      codeHtml += processed + '\n';
+    });
+
+    screen.innerHTML = makeHeader() + `<div class="game-body">
+      <div class="fill-wrap" style="max-width:550px;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+          <span style="font-size:.65rem;color:var(--cyan);font-family:Orbitron;letter-spacing:.1em">代码填空</span>
+          <span style="font-size:.65rem;color:var(--text2)">填入空白</span>
+        </div>
+        <div class="fill-desc">✏️ ${q.desc}</div>
+        <div class="fill-code-box">
+          <div class="output-code-header">
+            <span class="dot" style="background:#ff5f57;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#ffbd2e;width:8px;height:8px;border-radius:50%"></span>
+            <span class="dot" style="background:#28ca41;width:8px;height:8px;border-radius:50%"></span>
+            <span style="margin-left:.5rem">fill_blanks.m</span>
+          </div>
+          <div class="fill-code-body" id="fillCodeEndless">${codeHtml}</div>
+        </div>
+        <div id="endlessArea" style="margin-top:.8rem"></div>
+      </div>
+    </div>
+    <div class="game-footer">
+      <button class="btn btn-sm btn-cyan" id="endlessFillSubmit">提交答案</button>
+    </div>`;
+
+    const firstBlank = screen.querySelector('.fill-blank[data-blank="0"]');
+    if (firstBlank) setTimeout(() => firstBlank.focus(), 100);
+
+    screen.querySelectorAll('.fill-blank').forEach(inp => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Tab') { e.preventDefault(); const next = screen.querySelector(`.fill-blank[data-blank="${+inp.dataset.blank+1}"]`); if (next) next.focus(); else document.getElementById('endlessFillSubmit').focus(); }
+        if (e.key === 'Enter') { e.preventDefault(); document.getElementById('endlessFillSubmit').click(); }
+      });
+    });
+
+    document.getElementById('endlessFillSubmit').addEventListener('click', () => {
+      const blanks = screen.querySelectorAll('.fill-blank');
+      let allCorrect = true;
+      blanks.forEach(inp => {
+        const idx = +inp.dataset.blank;
+        if (inp.value.trim() === q.blanks[idx]) { inp.classList.add('correct'); }
+        else { inp.classList.add('wrong'); allCorrect = false; inp.title = '正确答案: ' + q.blanks[idx]; inp.value = q.blanks[idx]; inp.style.fontSize = '.75rem'; }
+        inp.disabled = true;
+      });
+      if (allCorrect) onCorrect(); else onWrong();
+      const area = document.getElementById('endlessArea');
+      addExplain(area, q.explain);
+      addNextBtn(area);
+      document.getElementById('endlessFillSubmit').remove();
+    });
+  }
+
+  function renderBugHunter(q) {
+    screen.innerHTML = makeHeader() + `<div class="game-body">
+      <div class="bughunter-wrap" style="max-width:550px;width:100%">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+          <span style="font-size:.65rem;color:var(--cyan);font-family:Orbitron;letter-spacing:.1em">Bug猎人</span>
+          <span style="font-size:.65rem;color:var(--text2)">找出bug</span>
+        </div>
+        <div class="bh-desc">🐛 ${q.desc}</div>
+        <div class="bh-editor">
+          <div class="bh-editor-header">
+            <span class="dot" style="background:#ff5f57"></span>
+            <span class="dot" style="background:#ffbd2e"></span>
+            <span class="dot" style="background:#28ca41"></span>
+            <span style="margin-left:.5rem">buggy_code.m</span>
+          </div>
+          <div class="bh-lines" id="endlessBHLines"></div>
+        </div>
+        <div id="endlessArea" style="margin-top:.8rem"></div>
+      </div>
+    </div>
+    <div class="game-footer">
+      <button class="btn btn-sm btn-cyan" id="endlessBHSubmit">提交（点击选中有bug的行）</button>
+    </div>`;
+
+    const linesEl = document.getElementById('endlessBHLines');
+    const selected = new Set();
+    q.code.forEach((line, idx) => {
+      const el = document.createElement('div');
+      el.className = 'bh-line';
+      el.innerHTML = `<span class="bh-ln">${idx + 1}</span><span class="bh-code">${escHtml(line)}</span>`;
+      el.addEventListener('click', () => {
+        if (el.style.pointerEvents === 'none') return;
+        el.classList.toggle('selected');
+        if (selected.has(idx)) selected.delete(idx); else selected.add(idx);
+      });
+      linesEl.appendChild(el);
+    });
+
+    document.getElementById('endlessBHSubmit').addEventListener('click', () => {
+      const lines = linesEl.querySelectorAll('.bh-line');
+      lines.forEach(l => l.style.pointerEvents = 'none');
+      let correct = selected.size === q.bugs.length && q.bugs.every(b => selected.has(b));
+      q.bugs.forEach(b => lines[b].classList.add('correct-bug'));
+      if (correct) onCorrect(); else onWrong();
+      const area = document.getElementById('endlessArea');
+      addExplain(area, q.explain);
+      addNextBtn(area);
+      document.getElementById('endlessBHSubmit').remove();
+    });
+  }
+
+  // ---- Main render dispatcher ----
+  function renderEndless() {
+    const q = getNextQuestion();
+    questionNum++;
+
+    switch (q.type) {
+      case 'choice':    renderChoice(q); break;
+      case 'terminal':  renderTerminal(q); break;
+      case 'output':    renderOutput(q); break;
+      case 'fill':      renderFill(q); break;
+      case 'bughunter': renderBugHunter(q); break;
+      default:          renderChoice(q); break;
+    }
+    showScreen('gameEndless');
+  }
+
+  renderEndless();
+}
+
+// ===================== UTILITY =====================
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===================== INIT =====================
+// Splash is set active via HTML class, no additional init needed
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
