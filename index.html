@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" data-theme="dark"><head>
 <meta charset="UTF-8">
@@ -631,7 +630,7 @@ body.locked .avatar{cursor:default!important}
 
 </style>
 </head>
-<body class="">
+<body class="" style="">
 
 <div class="bg-aurora"></div>
 
@@ -642,7 +641,7 @@ body.locked .avatar{cursor:default!important}
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-brand"><span>My Space</span></div>
   <div class="nav-links">
-    <button class="nav-link active" data-section="profile" onclick="goTo('profile')">
+    <button class="nav-link" data-section="profile" onclick="goTo('profile')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg>
       Profile
     </button>
@@ -666,8 +665,8 @@ body.locked .avatar{cursor:default!important}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h4M8 10v4"></path><path d="M15 13h.01M18 11h.01"></path><rect width="20" height="12" x="2" y="6" rx="2"></rect></svg>
       Games
     </button>
-    <button class="nav-link" data-section="books" onclick="goTo('books')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg>
+    <button class="nav-link active" data-section="books" onclick="goTo('books')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path><path d="M8 7h6"></path><path d="M8 11h8"></path></svg>
       Books
     </button>
   </div>
@@ -704,9 +703,9 @@ body.locked .avatar{cursor:default!important}
         <input type="file" id="avatarInput" class="hidden-input" accept="image/*" onchange="handleAvatar(event)">
       </div>
       <div class="hero-info">
-        <div class="hero-greeting" id="greetingText">Good evening,</div>
+        <div class="hero-greeting" id="greetingText">Good morning,</div>
         <div class="hero-name" id="userName" data-editable="" contenteditable="true">Enchore</div>
-        <div class="hero-bio" id="userBio" data-editable="" contenteditable="true">Click here to write a little about yourself. Share your story, your passions, or whatever makes you, you.</div>
+        <div class="hero-bio" id="userBio" data-editable="" contenteditable="true">ME</div>
         <div class="hero-socials" id="socialsContainer"><span class="social-chip" data-editable="" contenteditable="true">@ twitter</span><span class="social-chip" data-editable="" contenteditable="true">@ github</span><span class="social-chip" data-editable="" contenteditable="true">@ email</span></div>
       </div>
     </div>
@@ -852,15 +851,81 @@ body.locked .avatar{cursor:default!important}
   <section class="section" id="books">
     <div class="section-header">
       <h2 class="section-title">
-        <span class="section-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg></span>
+        <span class="section-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path><path d="M8 7h6"></path><path d="M8 11h8"></path></svg></span>
         Learning Books
       </h2>
-      <button class="btn btn-primary btn-sm admin-only" onclick="requireAuth(()=>openBookImport())">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      <button class="btn btn-primary btn-sm admin-only" onclick="requireAuth(()=&gt;openBookImport())">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
         Add Book
       </button>
     </div>
-    <div class="books-grid" id="booksGrid"></div>
+    <div class="books-grid" id="booksGrid">
+    <div class="card book-card" data-new="" onclick="openBookReader('book_1772369632460')">
+      <div class="card-actions admin-only">
+        <button class="card-action-btn" onclick="event.stopPropagation();requireAuth(()=&gt;openBookEdit(0))" title="Edit">✎</button>
+        <button class="card-action-btn delete" onclick="event.stopPropagation();requireAuth(()=&gt;deleteBook(0))" title="Delete">×</button>
+      </div>
+      <div class="book-card-cover" style="background:linear-gradient(135deg,#C41E3A,#FFD700)">
+        <div class="book-card-cover-icon">📖</div>
+      </div>
+      <div class="book-card-inner">
+        <div class="book-card-title">习近平新时代中国特色社会主义思想概论</div>
+        <div class="book-card-author">编写组</div>
+        <div class="book-card-tags"><span class="book-card-tag">思政课</span><span class="book-card-tag">政治理论</span></div>
+        <div class="book-card-progress">Page 9 / 367 (2%)</div>
+        <div class="book-card-actions-row">
+          <button class="book-card-open" onclick="event.stopPropagation();openBookReader('book_1772369632460')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            Read
+          </button>
+          <button class="book-card-dl" onclick="event.stopPropagation();downloadBookById('book_1772369632460')">⬇ Download</button>
+        </div>
+      </div>
+    </div>
+    <div class="card book-card" data-new="" onclick="openBookReader('book_1772408954517')">
+      <div class="card-actions admin-only">
+        <button class="card-action-btn" onclick="event.stopPropagation();requireAuth(()=&gt;openBookEdit(1))" title="Edit">✎</button>
+        <button class="card-action-btn delete" onclick="event.stopPropagation();requireAuth(()=&gt;deleteBook(1))" title="Delete">×</button>
+      </div>
+      <div class="book-card-cover" style="background:linear-gradient(135deg,#1a5276,#3498db)">
+        <div class="book-card-cover-icon">📖</div>
+      </div>
+      <div class="book-card-inner">
+        <div class="book-card-title">动手学计算机视觉</div>
+        
+        
+        <div class="book-card-progress">Page 1 / ? (0%)</div>
+        <div class="book-card-actions-row">
+          <button class="book-card-open" onclick="event.stopPropagation();openBookReader('book_1772408954517')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            Read
+          </button>
+          <button class="book-card-dl" onclick="event.stopPropagation();downloadBookById('book_1772408954517')">⬇ Download</button>
+        </div>
+      </div>
+    </div>
+    <div class="card book-card" data-new="" onclick="openBookReader('book_1772409037689')">
+      <div class="card-actions admin-only">
+        <button class="card-action-btn" onclick="event.stopPropagation();requireAuth(()=&gt;openBookEdit(2))" title="Edit">✎</button>
+        <button class="card-action-btn delete" onclick="event.stopPropagation();requireAuth(()=&gt;deleteBook(2))" title="Delete">×</button>
+      </div>
+      <div class="book-card-cover" style="background:linear-gradient(135deg,#145a32,#27ae60)">
+        <div class="book-card-cover-icon">📖</div>
+      </div>
+      <div class="book-card-inner">
+        <div class="book-card-title">软件项目管理</div>
+        
+        <div class="book-card-tags"><span class="book-card-tag">项目管理</span></div>
+        <div class="book-card-progress">Page 1 / ? (0%)</div>
+        <div class="book-card-actions-row">
+          <button class="book-card-open" onclick="event.stopPropagation();openBookReader('book_1772409037689')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            Read
+          </button>
+          <button class="book-card-dl" onclick="event.stopPropagation();downloadBookById('book_1772409037689')">⬇ Download</button>
+        </div>
+      </div>
+    </div></div>
   </section>
 
 </main>
@@ -869,26 +934,30 @@ body.locked .avatar{cursor:default!important}
 <!-- Content Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalContent">
-      <div class="modal-title">Add Friend</div>
-      <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="mName" value="" placeholder="Friend's name"></div>
-      <div class="form-group"><label class="form-label">Tagline / Note</label><textarea class="form-textarea" id="mNote" placeholder="A short note about this friend..." rows="3"></textarea></div>
-      <div class="form-actions">
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveFriend(-1)">Save</button>
-      </div></div>
+    <div class="modal-title">Add Book</div>
+    <div class="form-group"><label class="form-label">PDF Filename (in root directory)</label><input class="form-input" id="mBookFilename" placeholder="e.g. textbook.pdf"></div>
+    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="mBookTitle" placeholder="Book title"></div>
+    <div class="form-group"><label class="form-label">Author</label><input class="form-input" id="mBookAuthor" placeholder="Author name"></div>
+    <div class="form-group"><label class="form-label">Tags (comma separated)</label><input class="form-input" id="mBookTags" placeholder="textbook, math, physics"></div>
+    <div class="form-group"><label class="form-label">Or select PDF to auto-detect pages</label><input class="form-input" type="file" id="mBookFile" accept=".pdf" style="padding:8px"></div>
+    <div class="form-error" id="bookImportError"></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="bookImportBtn" onclick="doImportBook()" disabled="">Adding...</button>
+    </div></div>
 </div>
 
 <!-- Auth Modal -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-modal" id="authModal">
       <div class="auth-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
-      <div class="auth-title">Set Your Password</div>
-      <div class="auth-desc">This password protects all write operations on your site. You'll need it to add or edit content.</div>
-      <div class="form-group" style="text-align:left"><label class="form-label">Password</label><input class="form-input" type="password" id="authPwd1" placeholder="Enter password"></div>
-      <div class="form-group" style="text-align:left"><label class="form-label">Confirm Password</label><input class="form-input" type="password" id="authPwd2" placeholder="Confirm password"></div>
+      <div class="auth-title">Administrator</div>
+      <div class="auth-desc">Enter your password to unlock editing.</div>
+      <div class="form-group" style="text-align:left"><label class="form-label">Password</label><input class="form-input" type="password" id="authPwd" placeholder="Enter password" onkeydown="if(event.key==='Enter')doUnlock()"></div>
       <div class="form-error" id="authError"></div>
       <div class="form-actions" style="justify-content:center;margin-top:20px">
-        <button class="btn btn-primary" onclick="doSetupPassword()">Set Password</button>
+        <button class="btn btn-ghost" onclick="closeAuth()">Cancel</button>
+        <button class="btn btn-primary" onclick="doUnlock()">Unlock</button>
       </div></div>
 </div>
 
@@ -898,33 +967,33 @@ body.locked .avatar{cursor:default!important}
     <!-- Row 1: Nav + Zoom + Actions -->
     <div class="pdf-toolbar-row">
       <div class="pdf-tool-section">
-        <button onclick="closePdfViewer()" title="Close">&#9664; Back</button>
+        <button onclick="closePdfViewer()" title="Close">◀ Back</button>
         <div class="pdf-tool-sep"></div>
-        <button onclick="pdfPrevPage()" title="Previous">&#9668;</button>
+        <button onclick="pdfPrevPage()" title="Previous">◄</button>
         <span class="pdf-page-info" id="pdfPageInfo">Page 1 / 1</span>
         <input type="number" id="pdfPageInput" min="1" value="1" onchange="pdfGoToPage(this.value)">
-        <button onclick="pdfNextPage()" title="Next">&#9658;</button>
+        <button onclick="pdfNextPage()" title="Next">►</button>
       </div>
       <div class="pdf-tool-section">
         <span class="pdf-tool-section-label">Zoom</span>
-        <button onclick="pdfZoom(-0.1)">&#8722;</button>
+        <button onclick="pdfZoom(-0.1)">−</button>
         <input type="range" id="pdfZoomSlider" min="0.25" max="4" step="0.05" value="1" oninput="pdfSetZoom(this.value)" style="width:80px;cursor:pointer;">
         <span id="pdfZoomLabel" style="min-width:36px;text-align:center;font-size:12px;">100%</span>
         <button onclick="pdfZoom(0.1)">+</button>
       </div>
       <div class="pdf-tool-section">
         <button onclick="saveAnnotations()" style="background:linear-gradient(135deg,var(--purple),var(--sky));color:#fff;border-color:transparent">Save</button>
-        <button onclick="downloadCurrentBook()" title="Download PDF">&#11015;</button>
-        <button onclick="toggleSettingsPanel()" title="Settings">&#9881;</button>
+        <button onclick="downloadCurrentBook()" title="Download PDF">⬇</button>
+        <button onclick="toggleSettingsPanel()" title="Settings">⚙</button>
       </div>
     </div>
     <!-- Row 2: Draw tools + Color + Brush + Toggles -->
     <div class="pdf-toolbar-row">
       <div class="pdf-tool-section">
         <span class="pdf-tool-section-label">Tool</span>
-        <button id="btnPenTool" onclick="toggleAnnotTool('pen')" title="Pen">&#9998; Pen</button>
-        <button id="btnHighlightTool" onclick="toggleAnnotTool('highlight')" title="Highlight">&#9618; HL</button>
-        <button id="btnEraserTool" onclick="toggleAnnotTool('eraser')" title="Eraser">&#9746; Eraser</button>
+        <button id="btnPenTool" onclick="toggleAnnotTool('pen')" title="Pen">✎ Pen</button>
+        <button id="btnHighlightTool" onclick="toggleAnnotTool('highlight')" title="Highlight">▒ HL</button>
+        <button id="btnEraserTool" onclick="toggleAnnotTool('eraser')" title="Eraser">☒ Eraser</button>
         <button id="btnEraserMode" onclick="toggleEraserMode()" title="Eraser mode" class="annot-toggle-sm">Stroke</button>
       </div>
       <div class="pdf-tool-section">
@@ -942,13 +1011,13 @@ body.locked .avatar{cursor:default!important}
         <span class="annot-slider-val" id="annotOpacityVal">100%</span>
       </div>
       <div class="pdf-tool-section">
-        <button id="btnPencilOnly" onclick="togglePencilOnly()" title="Pencil only" class="annot-toggle-sm">&#9997; All</button>
+        <button id="btnPencilOnly" onclick="togglePencilOnly()" title="Pencil only" class="annot-toggle-sm">✍ All</button>
         <button id="btnPressure" onclick="togglePressure()" title="Pressure" class="annot-toggle-sm">Prs</button>
         <button id="btnSmooth" onclick="toggleSmooth()" title="Smoothing" class="annot-toggle-sm active">Smo</button>
       </div>
       <div class="pdf-tool-section">
-        <button onclick="undoAnnot()" title="Undo">&#8634;</button>
-        <button onclick="clearPageAnnot()" title="Clear">&#10006;</button>
+        <button onclick="undoAnnot()" title="Undo">↺</button>
+        <button onclick="clearPageAnnot()" title="Clear">✖</button>
       </div>
     </div>
     <!-- Color Picker Popover -->
@@ -972,25 +1041,20 @@ body.locked .avatar{cursor:default!important}
     <div class="settings-panel" id="settingsPanel">
       <div class="settings-title">Annotation Settings</div>
       <div class="settings-row">
-        <button class="btn btn-sm btn-ghost" onclick="exportAnnotSettings()">&#11015; Export Settings</button>
+        <button class="btn btn-sm btn-ghost" onclick="exportAnnotSettings()">⬇ Export Settings</button>
         <label class="btn btn-sm btn-ghost" style="cursor:pointer">
-          &#11014; Import Settings
+          ⬆ Import Settings
           <input type="file" accept=".json" style="display:none" onchange="importAnnotSettings(this)">
         </label>
       </div>
       <div class="settings-row" style="font-size:12px;color:var(--text3);margin-top:8px">Settings auto-save to your browser.</div>
     </div>
   </div>
-  <div class="pdf-viewer-body" id="pdfViewerBody">
-    <div class="pdf-page-wrapper" id="pdfPageWrapper">
-      <canvas id="pdfRenderCanvas" class="pdf-render"></canvas>
-      <canvas id="annotationCanvas" class="annotation-layer"></canvas>
-    </div>
-  </div>
+  <div class="pdf-viewer-body" id="pdfViewerBody"><div class="pdf-loading" style="color:var(--text2)">Error: Invalid PDF structure.</div></div>
 </div>
 
 <!-- Embedded Data: this JSON block is updated each time you Save & Download -->
-<script id="embedded-data" type="application/json">{"profile":{"name":"Enchore","bio":"Click here to write a little about yourself. Share your story, your passions, or whatever makes you, you.","socials":["@ twitter","@ github","@ email"],"avatar":null},"friends":[{"name":"霜","note":"got the same symptom like me","avatar":null,"posts":[]},{"name":"Faye","note":"DEAR sis","avatar":null,"posts":[]},{"name":"Countrie","note":"big eyes good face, tough attitude to life","avatar":null,"posts":[]}],"diary":[],"blog":[],"notes":[],"books":[{"id":"book_1772369632460","title":"习近平新时代中国特色社会主义思想概论","author":"编写组","filename":"习近平新时代中国特色社会主义思想概论.pdf","tags":["思政课","政治理论"],"coverGradient":["#C41E3A","#FFD700"],"totalPages":367,"lastReadPage":1,"dateAdded":"2026-03-01T00:00:00.000Z"}],"adminHash":"a7e041538c7eee2facd5eb64366320287ec337ce63456d88241010a741562fed","theme":"dark"}</script>
+<script id="embedded-data" type="application/json">{"profile":{"name":"Enchore","bio":"ME","socials":["@ twitter","@ github","@ email"],"avatar":null},"friends":[{"name":"霜","note":"got the same symptom like me","avatar":null,"posts":[]},{"name":"Faye","note":"DEAR sis","avatar":null,"posts":[]},{"name":"Countrie","note":"big eyes good face, tough attitude to life","avatar":null,"posts":[]}],"diary":[],"blog":[],"notes":[],"books":[{"id":"book_1772369632460","title":"习近平新时代中国特色社会主义思想概论","author":"编写组","filename":"习近平新时代中国特色社会主义思想概论.pdf","tags":["思政课","政治理论"],"coverGradient":["#C41E3A","#FFD700"],"totalPages":367,"lastReadPage":9,"dateAdded":"2026-03-01T00:00:00.000Z"},{"id":"book_1772408954517","title":"动手学计算机视觉","author":"","filename":"动手学计算机视觉.pdf","tags":[],"coverGradient":["#1a5276","#3498db"],"totalPages":0,"lastReadPage":1,"dateAdded":"2026-03-01T23:49:14.517Z"},{"id":"book_1772409037689","title":"软件项目管理","author":"","filename":"软件项目管理.pdf","tags":["项目管理"],"coverGradient":["#145a32","#27ae60"],"totalPages":0,"lastReadPage":1,"dateAdded":"2026-03-01T23:50:37.689Z"}],"adminHash":"a7e041538c7eee2facd5eb64366320287ec337ce63456d88241010a741562fed","theme":"dark"}</script>
 
 <script>
 /* ═══════════════════════════════════════
@@ -2627,6 +2691,7 @@ if (!hasPassword()) {
 <script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;75124c326cb447fe934cde04713ae013&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
 
 
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;75124c326cb447fe934cde04713ae013&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
+<script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;75124c326cb447fe934cde04713ae013&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
+
 </body></html>
