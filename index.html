@@ -703,7 +703,7 @@ body.locked .avatar{cursor:default!important}
         <input type="file" id="avatarInput" class="hidden-input" accept="image/*" onchange="handleAvatar(event)">
       </div>
       <div class="hero-info">
-        <div class="hero-greeting" id="greetingText">Good morning,</div>
+        <div class="hero-greeting" id="greetingText">Good afternoon,</div>
         <div class="hero-name" id="userName" data-editable="" contenteditable="true">Enchore</div>
         <div class="hero-bio" id="userBio" data-editable="" contenteditable="true">ME</div>
         <div class="hero-socials" id="socialsContainer"><span class="social-chip" data-editable="" contenteditable="true">@ twitter</span><span class="social-chip" data-editable="" contenteditable="true">@ github</span><span class="social-chip" data-editable="" contenteditable="true">@ email</span></div>
@@ -882,7 +882,7 @@ body.locked .avatar{cursor:default!important}
         </div>
       </div>
     </div>
-    <div class="card book-card" data-new="" onclick="openBookReader('book_1772421811769')">
+    <div class="card book-card" data-new="" onclick="openBookReader('book_1772426566483')">
       <div class="card-actions admin-only">
         <button class="card-action-btn" onclick="event.stopPropagation();requireAuth(()=&gt;openBookEdit(1))" title="Edit">✎</button>
         <button class="card-action-btn delete" onclick="event.stopPropagation();requireAuth(()=&gt;deleteBook(1))" title="Delete">×</button>
@@ -891,38 +891,82 @@ body.locked .avatar{cursor:default!important}
         <div class="book-card-cover-icon">📖</div>
       </div>
       <div class="book-card-inner">
-        <div class="book-card-title">动手学计算机视觉</div>
+        <div class="book-card-title">动手学计算机视觉前半部分</div>
         
-        
-        <div class="book-card-progress">Page 1 / 318 (0%)</div>
+        <div class="book-card-tags"><span class="book-card-tag">计算机视觉</span></div>
+        <div class="book-card-progress">Page 1 / 158 (1%)</div>
         <div class="book-card-actions-row">
-          <button class="book-card-open" onclick="event.stopPropagation();openBookReader('book_1772421811769')">
+          <button class="book-card-open" onclick="event.stopPropagation();openBookReader('book_1772426566483')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
             Read
           </button>
-          <button class="book-card-dl" onclick="event.stopPropagation();downloadBookById('book_1772421811769')">⬇ Download</button>
+          <button class="book-card-dl" onclick="event.stopPropagation();downloadBookById('book_1772426566483')">⬇ Download</button>
         </div>
       </div>
     </div>
-    <div class="card book-card" data-new="" onclick="openBookReader('book_1772421819622')">
+    <div class="card book-card" data-new="" onclick="openBookReader('book_1772426594649')">
       <div class="card-actions admin-only">
         <button class="card-action-btn" onclick="event.stopPropagation();requireAuth(()=&gt;openBookEdit(2))" title="Edit">✎</button>
         <button class="card-action-btn delete" onclick="event.stopPropagation();requireAuth(()=&gt;deleteBook(2))" title="Delete">×</button>
+      </div>
+      <div class="book-card-cover" style="background:linear-gradient(135deg,#145a32,#27ae60)">
+        <div class="book-card-cover-icon">📖</div>
+      </div>
+      <div class="book-card-inner">
+        <div class="book-card-title">动手学计算机视觉后半部分</div>
+        
+        <div class="book-card-tags"><span class="book-card-tag">计算机视觉</span></div>
+        <div class="book-card-progress">Page 1 / 160 (1%)</div>
+        <div class="book-card-actions-row">
+          <button class="book-card-open" onclick="event.stopPropagation();openBookReader('book_1772426594649')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            Read
+          </button>
+          <button class="book-card-dl" onclick="event.stopPropagation();downloadBookById('book_1772426594649')">⬇ Download</button>
+        </div>
+      </div>
+    </div>
+    <div class="card book-card" data-new="" onclick="openBookReader('book_1772426621327')">
+      <div class="card-actions admin-only">
+        <button class="card-action-btn" onclick="event.stopPropagation();requireAuth(()=&gt;openBookEdit(3))" title="Edit">✎</button>
+        <button class="card-action-btn delete" onclick="event.stopPropagation();requireAuth(()=&gt;deleteBook(3))" title="Delete">×</button>
+      </div>
+      <div class="book-card-cover" style="background:linear-gradient(135deg,#7d3c98,#a569bd)">
+        <div class="book-card-cover-icon">📖</div>
+      </div>
+      <div class="book-card-inner">
+        <div class="book-card-title">软件项目管理前半部分</div>
+        
+        <div class="book-card-tags"><span class="book-card-tag">项目管理</span></div>
+        <div class="book-card-progress">Page 1 / 147 (1%)</div>
+        <div class="book-card-actions-row">
+          <button class="book-card-open" onclick="event.stopPropagation();openBookReader('book_1772426621327')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            Read
+          </button>
+          <button class="book-card-dl" onclick="event.stopPropagation();downloadBookById('book_1772426621327')">⬇ Download</button>
+        </div>
+      </div>
+    </div>
+    <div class="card book-card" data-new="" onclick="openBookReader('book_1772426641810')">
+      <div class="card-actions admin-only">
+        <button class="card-action-btn" onclick="event.stopPropagation();requireAuth(()=&gt;openBookEdit(4))" title="Edit">✎</button>
+        <button class="card-action-btn delete" onclick="event.stopPropagation();requireAuth(()=&gt;deleteBook(4))" title="Delete">×</button>
       </div>
       <div class="book-card-cover" style="background:linear-gradient(135deg,#784212,#e67e22)">
         <div class="book-card-cover-icon">📖</div>
       </div>
       <div class="book-card-inner">
-        <div class="book-card-title">软件项目管理</div>
+        <div class="book-card-title">软件项目管理后半部分</div>
         
-        
-        <div class="book-card-progress">Page 1 / 295 (0%)</div>
+        <div class="book-card-tags"><span class="book-card-tag">项目管理</span></div>
+        <div class="book-card-progress">Page 1 / 148 (1%)</div>
         <div class="book-card-actions-row">
-          <button class="book-card-open" onclick="event.stopPropagation();openBookReader('book_1772421819622')">
+          <button class="book-card-open" onclick="event.stopPropagation();openBookReader('book_1772426641810')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
             Read
           </button>
-          <button class="book-card-dl" onclick="event.stopPropagation();downloadBookById('book_1772421819622')">⬇ Download</button>
+          <button class="book-card-dl" onclick="event.stopPropagation();downloadBookById('book_1772426641810')">⬇ Download</button>
         </div>
       </div>
     </div></div>
@@ -934,14 +978,16 @@ body.locked .avatar{cursor:default!important}
 <!-- Content Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalContent">
-    <div class="modal-title">Edit Book</div>
-    <div class="form-group"><label class="form-label">PDF Filename (in root directory)</label><input class="form-input" id="mBookFilename" value="软件项目管理.pdf"></div>
-    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="mBookTitle" value="软件项目管理"></div>
-    <div class="form-group"><label class="form-label">Author</label><input class="form-input" id="mBookAuthor" value=""></div>
-    <div class="form-group"><label class="form-label">Tags (comma separated)</label><input class="form-input" id="mBookTags" value=""></div>
+    <div class="modal-title">Add Book</div>
+    <div class="form-group"><label class="form-label">PDF Filename (in root directory)</label><input class="form-input" id="mBookFilename" placeholder="e.g. textbook.pdf"></div>
+    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="mBookTitle" placeholder="Book title"></div>
+    <div class="form-group"><label class="form-label">Author</label><input class="form-input" id="mBookAuthor" placeholder="Author name"></div>
+    <div class="form-group"><label class="form-label">Tags (comma separated)</label><input class="form-input" id="mBookTags" placeholder="textbook, math, physics"></div>
+    <div class="form-group"><label class="form-label">Or select PDF to auto-detect pages</label><input class="form-input" type="file" id="mBookFile" accept=".pdf" style="padding:8px"></div>
+    <div class="form-error" id="bookImportError"></div>
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="doEditBook(2)">Save</button>
+      <button class="btn btn-primary" id="bookImportBtn" onclick="doImportBook()" disabled="">Adding...</button>
     </div></div>
 </div>
 
@@ -968,15 +1014,15 @@ body.locked .avatar{cursor:default!important}
         <button onclick="closePdfViewer()" title="Close">◀ Back</button>
         <div class="pdf-tool-sep"></div>
         <button onclick="pdfPrevPage()" title="Previous">◄</button>
-        <span class="pdf-page-info" id="pdfPageInfo">Page 1 / 1</span>
-        <input type="number" id="pdfPageInput" min="1" value="1" onchange="pdfGoToPage(this.value)">
+        <span class="pdf-page-info" id="pdfPageInfo">Page 1 / 148</span>
+        <input type="number" id="pdfPageInput" min="1" value="1" onchange="pdfGoToPage(this.value)" max="148">
         <button onclick="pdfNextPage()" title="Next">►</button>
       </div>
       <div class="pdf-tool-section">
         <span class="pdf-tool-section-label">Zoom</span>
         <button onclick="pdfZoom(-0.1)">−</button>
         <input type="range" id="pdfZoomSlider" min="0.25" max="4" step="0.05" value="1" oninput="pdfSetZoom(this.value)" style="width:80px;cursor:pointer;">
-        <span id="pdfZoomLabel" style="min-width:36px;text-align:center;font-size:12px;">100%</span>
+        <span id="pdfZoomLabel" style="min-width:36px;text-align:center;font-size:12px;">125%</span>
         <button onclick="pdfZoom(0.1)">+</button>
       </div>
       <div class="pdf-tool-section">
@@ -996,17 +1042,41 @@ body.locked .avatar{cursor:default!important}
       </div>
       <div class="pdf-tool-section">
         <span class="pdf-tool-section-label">Color</span>
-        <div id="annotPalette" class="annot-palette"></div>
+        <div id="annotPalette" class="annot-palette">
+    <div class="color-swatch active" style="background:#FF3333" data-color="#FF3333" onclick="selectPaletteColor(this)">
+      
+    </div>
+    <div class="color-swatch" style="background:#3366FF" data-color="#3366FF" onclick="selectPaletteColor(this)">
+      
+    </div>
+    <div class="color-swatch" style="background:#33CC66" data-color="#33CC66" onclick="selectPaletteColor(this)">
+      
+    </div>
+    <div class="color-swatch" style="background:#FFD700" data-color="#FFD700" onclick="selectPaletteColor(this)">
+      
+    </div>
+    <div class="color-swatch" style="background:#333333" data-color="#333333" onclick="selectPaletteColor(this)">
+      
+    </div>
+    <div class="color-swatch" style="background:#FF66CC" data-color="#FF66CC" onclick="selectPaletteColor(this)">
+      
+    </div>
+    <div class="color-swatch" style="background:#FF8800" data-color="#FF8800" onclick="selectPaletteColor(this)">
+      
+    </div>
+    <div class="color-swatch" style="background:#FFFFFF" data-color="#FFFFFF" onclick="selectPaletteColor(this)">
+      
+    </div></div>
         <button class="annot-add-color" onclick="toggleColorPicker()" title="Custom color">+</button>
       </div>
       <div class="pdf-tool-section">
         <span class="pdf-tool-section-label">Size</span>
         <input type="range" id="annotSizeSlider" class="annot-slider" min="0.5" max="30" step="0.5" value="4" oninput="onSizeChange(this.value)">
-        <span class="annot-slider-val" id="annotSizeVal">4</span>
+        <span class="annot-slider-val" id="annotSizeVal">4.5</span>
         <div class="pdf-tool-sep"></div>
         <span class="pdf-tool-section-label">Opacity</span>
         <input type="range" id="annotOpacitySlider" class="annot-slider" min="0" max="100" step="1" value="100" oninput="onOpacityChange(this.value)">
-        <span class="annot-slider-val" id="annotOpacityVal">100%</span>
+        <span class="annot-slider-val" id="annotOpacityVal">24%</span>
       </div>
       <div class="pdf-tool-section">
         <button id="btnPencilOnly" onclick="togglePencilOnly()" title="Pencil only" class="annot-toggle-sm">✍ All</button>
@@ -1048,11 +1118,11 @@ body.locked .avatar{cursor:default!important}
       <div class="settings-row" style="font-size:12px;color:var(--text3);margin-top:8px">Settings auto-save to your browser.</div>
     </div>
   </div>
-  <div class="pdf-viewer-body" id="pdfViewerBody"><div class="pdf-loading" style="color:var(--text2)">Error: Invalid PDF structure.</div></div>
+  <div class="pdf-viewer-body" id="pdfViewerBody"><div class="pdf-page-wrapper" id="pdfPageWrapper"><canvas id="pdfRenderCanvas" class="pdf-render" width="942" height="1348" style="width: 628.582px; height: 899.324px;"></canvas><canvas id="annotationCanvas" class="annotation-layer" width="942" height="1348" style="touch-action: none; width: 628.582px; height: 899.324px; cursor: default;"></canvas></div></div>
 </div>
 
 <!-- Embedded Data: this JSON block is updated each time you Save & Download -->
-<script id="embedded-data" type="application/json">{"profile":{"name":"Enchore","bio":"ME","socials":["@ twitter","@ github","@ email"],"avatar":null},"friends":[{"name":"霜","note":"got the same symptom like me","avatar":null,"posts":[]},{"name":"Faye","note":"DEAR sis","avatar":null,"posts":[]},{"name":"Countrie","note":"big eyes good face, tough attitude to life","avatar":null,"posts":[]}],"diary":[],"blog":[],"notes":[],"books":[{"id":"book_1772369632460","title":"习近平新时代中国特色社会主义思想概论","author":"编写组","filename":"习近平新时代中国特色社会主义思想概论.pdf","tags":["思政课","政治理论"],"coverGradient":["#C41E3A","#FFD700"],"totalPages":367,"lastReadPage":9,"dateAdded":"2026-03-01T00:00:00.000Z"},{"id":"book_1772421811769","title":"动手学计算机视觉","author":"","filename":"动手学计算机视觉.pdf","tags":[],"coverGradient":["#7d3c98","#a569bd"],"totalPages":318,"lastReadPage":1,"dateAdded":"2026-03-02T03:23:32.248Z"},{"id":"book_1772421819622","title":"软件项目管理","author":"","filename":"软件项目管理.pdf","tags":[],"coverGradient":["#784212","#e67e22"],"totalPages":295,"lastReadPage":1,"dateAdded":"2026-03-02T03:23:40.205Z"}],"adminHash":"a7e041538c7eee2facd5eb64366320287ec337ce63456d88241010a741562fed","theme":"dark"}</script>
+<script id="embedded-data" type="application/json">{"profile":{"name":"Enchore","bio":"ME","socials":["@ twitter","@ github","@ email"],"avatar":null},"friends":[{"name":"霜","note":"got the same symptom like me","avatar":null,"posts":[]},{"name":"Faye","note":"DEAR sis","avatar":null,"posts":[]},{"name":"Countrie","note":"big eyes good face, tough attitude to life","avatar":null,"posts":[]}],"diary":[],"blog":[],"notes":[],"books":[{"id":"book_1772369632460","title":"习近平新时代中国特色社会主义思想概论","author":"编写组","filename":"习近平新时代中国特色社会主义思想概论.pdf","tags":["思政课","政治理论"],"coverGradient":["#C41E3A","#FFD700"],"totalPages":367,"lastReadPage":9,"dateAdded":"2026-03-01T00:00:00.000Z"},{"id":"book_1772426566483","title":"动手学计算机视觉前半部分","author":"","filename":"动手学计算机视觉_compressed-1-158.pdf","tags":["计算机视觉"],"coverGradient":["#7d3c98","#a569bd"],"totalPages":158,"lastReadPage":1,"dateAdded":"2026-03-02T04:42:46.483Z"},{"id":"book_1772426594649","title":"动手学计算机视觉后半部分","author":"","filename":"动手学计算机视觉_compressed-159-318.pdf","tags":["计算机视觉"],"coverGradient":["#145a32","#27ae60"],"totalPages":160,"lastReadPage":1,"dateAdded":"2026-03-02T04:43:14.649Z"},{"id":"book_1772426621327","title":"软件项目管理前半部分","author":"","filename":"软件项目管理_compressed-1-147.pdf","tags":["项目管理"],"coverGradient":["#7d3c98","#a569bd"],"totalPages":147,"lastReadPage":1,"dateAdded":"2026-03-02T04:43:41.327Z"},{"id":"book_1772426641810","title":"软件项目管理后半部分","author":"","filename":"软件项目管理_compressed-148-295.pdf","tags":["项目管理"],"coverGradient":["#784212","#e67e22"],"totalPages":148,"lastReadPage":1,"dateAdded":"2026-03-02T04:44:01.810Z"}],"adminHash":"a7e041538c7eee2facd5eb64366320287ec337ce63456d88241010a741562fed","theme":"dark"}</script>
 
 <script>
 /* ═══════════════════════════════════════
@@ -2709,5 +2779,6 @@ if (!hasPassword()) {
 <script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;75124c326cb447fe934cde04713ae013&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
 
 <script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;75124c326cb447fe934cde04713ae013&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
+
 
 </body></html>
