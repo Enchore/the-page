@@ -1946,17 +1946,33 @@ async function openBookReader(bookId){
 
   try{
     let pdfData=null;
+    let fetchErr='';
     if(book.filename){
-      try{
-        const resp=await fetch('./'+encodeURIComponent(book.filename));
-        if(resp.ok){pdfData=await resp.arrayBuffer();try{await storePDF(bookId,pdfData.slice(0));}catch(e){}}
-      }catch(e){}
+      // Try both raw and encoded filename (some servers handle differently)
+      const urls=['./'+book.filename, './'+encodeURIComponent(book.filename)];
+      for(const url of urls){
+        if(pdfData) break;
+        try{
+          const resp=await fetch(url);
+          if(resp.ok){
+            const buf=await resp.arrayBuffer();
+            if(buf.byteLength>0){
+              const head=new Uint8Array(buf,0,Math.min(5,buf.byteLength));
+              const sig=String.fromCharCode(...head);
+              if(sig.startsWith('%PDF')){
+                pdfData=buf;
+                try{await storePDF(bookId,buf.slice(0));}catch(e){}
+              } else { fetchErr='File is not a valid PDF'; }
+            }
+          } else { fetchErr='HTTP '+resp.status; }
+        }catch(e){ fetchErr=e.message; }
+      }
     }
-    if(!pdfData){try{pdfData=await loadPDF(bookId);}catch(e){}}
-    if(!pdfData){
+    if(!pdfData){try{const cached=await loadPDF(bookId);if(cached&&cached.byteLength>0)pdfData=cached;}catch(e){}}
+    if(!pdfData||pdfData.byteLength===0){
       document.getElementById('pdfViewerBody').innerHTML=`
         <div class="pdf-loading" style="flex-direction:column;gap:16px;text-align:center">
-          <p style="color:var(--text2)">PDF not found.${book.filename?'<br>Expected: <b>'+esc(book.filename)+'</b>':''}<br>Select manually:</p>
+          <p style="color:var(--text2)">PDF not found.${book.filename?'<br>Expected: <b>'+esc(book.filename)+'</b>':''}${fetchErr?'<br><small style="color:var(--text3)">'+esc(fetchErr)+'</small>':''}<br>Select manually:</p>
           <label class="btn btn-primary" style="cursor:pointer">Select PDF<input type="file" accept=".pdf" style="display:none" onchange="reimportBookPDF(this,'${esc(bookId)}')"></label>
           <button class="btn btn-ghost" onclick="closePdfViewer()">Cancel</button>
         </div>`;
