@@ -1867,9 +1867,9 @@ async function doImportBook(){
   if(file){
     try{
       const arrayBuffer=await file.arrayBuffer();
-      const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+      const pdf=await pdfjsLib.getDocument({data:arrayBuffer.slice(0)}).promise;
       totalPages=pdf.numPages;
-      await storePDF(id,arrayBuffer);
+      await storePDF(id,arrayBuffer.slice(0));
     }catch(e){
       errEl.textContent='Failed to read PDF: '+e.message;errEl.classList.add('visible');
       btn.textContent='Add';btn.disabled=false;return;
@@ -1949,7 +1949,7 @@ async function openBookReader(bookId){
     if(book.filename){
       try{
         const resp=await fetch('./'+encodeURIComponent(book.filename));
-        if(resp.ok){pdfData=await resp.arrayBuffer();try{await storePDF(bookId,pdfData);}catch(e){}}
+        if(resp.ok){pdfData=await resp.arrayBuffer();try{await storePDF(bookId,pdfData.slice(0));}catch(e){}}
       }catch(e){}
     }
     if(!pdfData){try{pdfData=await loadPDF(bookId);}catch(e){}}
@@ -1965,7 +1965,7 @@ async function openBookReader(bookId){
     const savedAnnot=localStorage.getItem('ms_annot_'+bookId);
     annotStrokes=savedAnnot?JSON.parse(savedAnnot):{};
     annotHistory=[];
-    pdfDoc=await pdfjsLib.getDocument({data:pdfData}).promise;
+    pdfDoc=await pdfjsLib.getDocument({data:pdfData.slice(0)}).promise;
     if(!book.totalPages||book.totalPages!==pdfDoc.numPages){book.totalPages=pdfDoc.numPages;save(KEYS.books,books);}
     pdfCurrentPage=book.lastReadPage||1;
     if(pdfCurrentPage>pdfDoc.numPages) pdfCurrentPage=1;
@@ -1984,8 +1984,8 @@ async function openBookReader(bookId){
 async function reimportBookPDF(input,bookId){
   const file=input.files[0];if(!file) return;
   try{
-    const buf=await file.arrayBuffer();await storePDF(bookId,buf);
-    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+    const buf=await file.arrayBuffer();await storePDF(bookId,buf.slice(0));
+    const pdf=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;
     const bk=books.find(b=>b.id===bookId);
     if(bk){bk.totalPages=pdf.numPages;save(KEYS.books,books);renderBooks();}
     closePdfViewer();openBookReader(bookId);
@@ -2694,4 +2694,5 @@ if (!hasPassword()) {
 <script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;75124c326cb447fe934cde04713ae013&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
 <script defer="" src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;75124c326cb447fe934cde04713ae013&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
 
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body></html>
