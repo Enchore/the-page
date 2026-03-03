@@ -47,13 +47,12 @@ canvas#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;poi
 .hub-title{font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--orange);letter-spacing:.2em}
 
 .hub-scene{width:100%;height:100%;perspective:1200px;display:flex;align-items:center;justify-content:center}
-.hub-ring{position:relative;width:700px;height:700px;transform-style:preserve-3d;animation:hubSpin 40s linear infinite}
-@keyframes hubSpin{from{transform:rotateX(-15deg) rotateY(0deg)}to{transform:rotateX(-15deg) rotateY(360deg)}}
-.hub-ring:hover{animation-play-state:paused}
+.hub-ring{position:relative;width:700px;height:700px;transform-style:preserve-3d;transform:rotateX(-15deg) rotateY(0deg);cursor:grab}
+.hub-ring.dragging{cursor:grabbing}
 
-.portal{position:absolute;width:140px;height:160px;left:50%;top:50%;cursor:pointer;transform-style:preserve-3d;transition:all .4s cubic-bezier(.25,.46,.45,.94)}
-.portal:hover{transform:translate(-50%,-50%) translateZ(40px) scale(1.12)}
-.portal-inner{width:100%;height:100%;background:var(--surface);border:1px solid #ffffff15;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;gap:.6rem;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
+.portal{position:absolute;width:140px;height:160px;left:50%;top:50%;cursor:pointer;transform-style:preserve-3d;transition:opacity .3s, filter .3s}
+.portal:hover .portal-inner{transform:scale(1.08)}
+.portal-inner{width:100%;height:100%;background:var(--surface);border:1px solid #ffffff15;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;gap:.6rem;position:relative;overflow:hidden;backdrop-filter:blur(8px);transition:transform .3s}
 .portal-inner::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange)}
 .portal.locked .portal-inner{opacity:.4;filter:grayscale(.8)}
 .portal.locked .portal-inner::before{background:var(--text2)}
@@ -509,7 +508,10 @@ function buildHub() {
     const unlockReqs = { matrix: 2, output: 3, terminal: 4, fill: 5, plot: 6 };
     const reqText = unlockReqs[m.id] ? `需要 ${unlockReqs[m.id]} 颗星解锁` : '';
     portal.className = `portal${locked ? ' locked' : ''}`;
-    portal.style.transform = `translate(-50%,-50%) translateX(${x}px) translateZ(${z}px) rotateY(${-((360/n)*i)}deg)`;
+    portal.style.transform = `translate(-50%,-50%) translateX(${x}px) translateZ(${z}px)`;
+    portal.dataset.baseAngle = ((360/n)*i).toString();
+    portal.dataset.posX = x.toString();
+    portal.dataset.posZ = z.toString();
     const stars = [0,1,2].map(s => `<span class="star${s < state.stars[m.id] ? ' earned' : ''}">★</span>`).join('');
     portal.innerHTML = `<div class="portal-inner">
       <div class="portal-icon">${m.icon}</div>
@@ -2944,6 +2946,87 @@ function initEndless() {
   renderEndless();
 }
 
+// ===================== HUB RING DRAG ROTATION =====================
+(function(){
+  const ring=document.getElementById('hubRing');
+  let currentAngle=0,targetAngle=0,velocity=0;
+  let isDragging=false,startX=0,dragStartAngle=0;
+  const friction=0.95,autoSpeed=0.15,sensitivity=0.4;
+  let autoRotate=true,autoTimer=null,rafId=null;
+  let autoDirection=1,lastDragDir=0;
+
+  function setAngle(deg){
+    currentAngle=deg;
+    ring.style.transform=`rotateX(-15deg) rotateY(${deg}deg)`;
+    // Counter-rotate each portal so text always faces the camera
+    const portals=ring.querySelectorAll('.portal');
+    portals.forEach(p=>{
+      const px=p.dataset.posX, pz=p.dataset.posZ;
+      if(px!==undefined){
+        p.style.transform=`translate(-50%,-50%) translateX(${px}px) translateZ(${pz}px) rotateY(${-deg}deg)`;
+      }
+    });
+  }
+
+  function animate(){
+    if(!isDragging){
+      if(autoRotate){
+        currentAngle+=autoSpeed*autoDirection;
+        setAngle(currentAngle);
+      }else{
+        velocity*=friction;
+        if(Math.abs(velocity)<0.05){autoDirection=lastDragDir||autoDirection;velocity=0;autoRotate=true;}
+        currentAngle+=velocity;
+        setAngle(currentAngle);
+      }
+    }
+    rafId=requestAnimationFrame(animate);
+  }
+
+  function getX(e){
+    if(e.touches&&e.touches.length)return e.touches[0].clientX;
+    return e.clientX;
+  }
+
+  function onStart(e){
+    isDragging=true;
+    autoRotate=false;
+    clearTimeout(autoTimer);
+    startX=getX(e);
+    dragStartAngle=currentAngle;
+    velocity=0;
+    ring.classList.add('dragging');
+    e.preventDefault();
+  }
+
+  function onMove(e){
+    if(!isDragging)return;
+    const dx=getX(e)-startX;
+    const newAngle=dragStartAngle+dx*sensitivity;
+    velocity=newAngle-currentAngle;
+    if(Math.abs(velocity)>0.01)lastDragDir=velocity>0?1:-1;
+    currentAngle=newAngle;
+    setAngle(currentAngle);
+    e.preventDefault();
+  }
+
+  function onEnd(){
+    if(!isDragging)return;
+    isDragging=false;
+    ring.classList.remove('dragging');
+    autoTimer=setTimeout(()=>{autoRotate=true;},4000);
+  }
+
+  ring.addEventListener('mousedown',onStart);
+  window.addEventListener('mousemove',onMove);
+  window.addEventListener('mouseup',onEnd);
+  ring.addEventListener('touchstart',onStart,{passive:false});
+  window.addEventListener('touchmove',onMove,{passive:false});
+  window.addEventListener('touchend',onEnd);
+
+  animate();
+})();
+
 // ===================== UTILITY =====================
 function shuffle(arr) {
   const a = [...arr];
@@ -2961,6 +3044,7 @@ function escHtml(s) {
 // ===================== INIT =====================
 // Splash is set active via HTML class, no additional init needed
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
