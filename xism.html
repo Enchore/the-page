@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<title>思政闯关 · 新时代中国特色社会主义概论</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--red-main:#D4232C;--red-glow:#D4232C66;--gold:#FFD700;--gold-glow:#FFD70044;
+--bg:#0A0A12;--bg2:#12121F;--bg3:#1A1A2E;--surface:#16162A;--surface2:#1E1E38;
+--text:#E8E8F0;--text2:#9090B0;--green:#00FF88;--red:#FF3366;--cyan:#00E5FF;
+--purple:#AA66FF;--orange:#FF6600;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Noto Sans SC','Fira Code',monospace}
+canvas#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10;display:none;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .5s}
+.screen.active{display:flex;opacity:1}
+
+/* SPLASH */
+#splash{background:radial-gradient(ellipse at center,#2a1a1a 0%,#0a0a12 70%);z-index:10000}
+.splash-title{font-family:'Noto Sans SC',sans-serif;font-size:clamp(1.8rem,5vw,3.5rem);font-weight:900;background:linear-gradient(135deg,var(--red-main),var(--gold),var(--red-main));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.15em;animation:titlePulse 3s infinite;text-align:center;line-height:1.4}
+.splash-sub{font-size:clamp(.75rem,1.8vw,1.1rem);color:var(--text2);margin:.8rem 0 2rem;letter-spacing:.25em;font-weight:300;text-align:center}
+.splash-badge{font-size:.7rem;color:var(--gold);border:1px solid var(--gold);padding:.3rem .8rem;border-radius:20px;margin-bottom:1.5rem;letter-spacing:.1em}
+@keyframes titlePulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.3)}}
+.btn{font-family:'Noto Sans SC',sans-serif;font-size:.95rem;padding:.8rem 2.5rem;border:2px solid var(--red-main);background:transparent;color:var(--red-main);cursor:pointer;letter-spacing:.15em;position:relative;overflow:hidden;transition:all .3s;border-radius:4px;z-index:10001;font-weight:700}
+.btn:hover{background:var(--red-main);color:#fff;box-shadow:0 0 30px var(--red-glow),inset 0 0 30px #ffffff22}
+.btn-cyan{border-color:var(--cyan);color:var(--cyan)}.btn-cyan:hover{background:var(--cyan);color:#000;box-shadow:0 0 30px var(--gold-glow)}
+.btn-green{border-color:var(--green);color:var(--green)}.btn-green:hover{background:var(--green);color:#000;box-shadow:0 0 30px #00ff8844}
+.btn-gold{border-color:var(--gold);color:var(--gold)}.btn-gold:hover{background:var(--gold);color:#000;box-shadow:0 0 30px var(--gold-glow)}
+.btn-sm{font-size:.75rem;padding:.5rem 1.2rem}
+
+/* HUB */
+#hub{background:var(--bg)}
+.hub-header{position:absolute;top:0;left:0;right:0;padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;z-index:20;background:linear-gradient(to bottom,#0a0a12ee,transparent)}
+.hub-stats{display:flex;gap:1.5rem;align-items:center;font-size:.85rem}
+.stat{display:flex;align-items:center;gap:.4rem}
+.stat .val{color:var(--gold);font-weight:700}
+.hub-title{font-size:1rem;color:var(--red-main);letter-spacing:.2em;font-weight:900}
+.hub-scene{width:100%;height:100%;perspective:1200px;display:flex;align-items:center;justify-content:center}
+.hub-ring{position:relative;width:700px;height:700px;transform-style:preserve-3d;transform:rotateX(-15deg) rotateY(0deg);cursor:grab}
+.hub-ring.dragging{cursor:grabbing}
+@keyframes hubSpin{from{transform:rotateX(-15deg) rotateY(0deg)}to{transform:rotateX(-15deg) rotateY(360deg)}}
+.portal{position:absolute;width:140px;height:160px;left:50%;top:50%;cursor:pointer;transform-style:preserve-3d;transition:opacity .3s, filter .3s}
+.portal:hover .portal-inner{transform:scale(1.08)}
+.portal-inner{width:100%;height:100%;background:var(--surface);border:1px solid #ffffff15;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;gap:.5rem;position:relative;overflow:hidden;backdrop-filter:blur(8px);transition:transform .3s}
+.portal-inner::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--red-main)}
+.portal.locked .portal-inner{opacity:.4;filter:grayscale(.8)}
+.portal.locked .portal-inner::before{background:var(--text2)}
+.portal-icon{font-size:2rem;filter:drop-shadow(0 0 10px var(--red-glow))}
+.portal-name{font-size:.75rem;font-weight:700;text-align:center;color:var(--text)}
+.portal-stars{display:flex;gap:2px;font-size:.75rem}
+.portal-stars .star{color:#333}
+.portal-stars .star.earned{color:var(--gold)}
+.portal .lock-icon{position:absolute;font-size:1.5rem;color:var(--text2)}
+.portal:not(.locked) .portal-inner{animation:glowPulse 3s infinite}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 5px var(--red-glow)}50%{box-shadow:0 0 20px var(--red-glow),0 0 40px #D4232C22}}
+.portal.locked .portal-inner::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 5px,#ffffff03 5px,#ffffff03 10px)}
+
+/* GAME SCREENS */
+.game-screen{background:var(--bg);flex-direction:column}
+.game-header{width:100%;padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-bottom:1px solid #ffffff0a;flex-shrink:0}
+.game-header-left{display:flex;align-items:center;gap:1rem}
+.back-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:1.3rem;padding:.3rem;transition:color .2s}
+.back-btn:hover{color:var(--red-main)}
+.game-title{font-size:.9rem;color:var(--red-main);letter-spacing:.15em;font-weight:700}
+.game-header-right{display:flex;gap:1.5rem;align-items:center;font-size:.8rem}
+.game-score{color:var(--gold)}.game-lives{color:var(--red)}.game-timer{color:var(--cyan)}
+.game-body{flex:1;width:100%;overflow:auto;display:flex;align-items:center;justify-content:center;padding:1.5rem;position:relative}
+.game-footer{width:100%;padding:.8rem 1.5rem;display:flex;justify-content:center;gap:1rem;background:var(--surface);border-top:1px solid #ffffff0a;flex-shrink:0}
+
+/* MEMORY CARDS */
+.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:750px;width:100%}
+.mem-card{aspect-ratio:3/4;perspective:800px;cursor:pointer}
+.mem-card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1)}
+.mem-card.flipped .mem-card-inner,.mem-card.matched .mem-card-inner{transform:rotateY(180deg)}
+.mem-card-front,.mem-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:.7rem;text-align:center}
+.mem-card-front{background:linear-gradient(145deg,var(--surface),var(--surface2));border:1px solid var(--red-main)}
+.mem-card-front::after{content:'☆';font-size:2rem;opacity:.3;color:var(--red-main)}
+.mem-card-back{transform:rotateY(180deg);border:1px solid #ffffff22}
+.mem-card-back.type-term{background:linear-gradient(145deg,#2a1a1a,#1f0d0d);border-color:var(--red-main);font-size:clamp(.6rem,1.3vw,.85rem);color:var(--gold);font-weight:700;line-height:1.4}
+.mem-card-back.type-def{background:linear-gradient(145deg,#1a1a2e,#0d1a2a);border-color:var(--cyan);font-size:clamp(.55rem,1.2vw,.75rem);color:var(--text);line-height:1.4}
+.mem-card.matched{opacity:.5;pointer-events:none}
+.mem-card.matched .mem-card-inner{transform:rotateY(180deg) scale(.95)}
+
+/* CHOICE QUESTIONS */
+.choice-wrap{max-width:700px;width:100%}
+.choice-question{background:var(--surface);border-left:3px solid var(--red-main);padding:1rem 1.2rem;margin-bottom:1rem;border-radius:0 8px 8px 0;font-size:.9rem;color:var(--text);line-height:1.6}
+.choice-options{display:flex;flex-direction:column;gap:.6rem}
+.choice-opt{padding:.8rem 1rem;background:var(--surface);border:1px solid #ffffff15;border-radius:8px;cursor:pointer;transition:all .2s;font-size:.85rem;line-height:1.5;display:flex;align-items:flex-start;gap:.6rem}
+.choice-opt:hover{border-color:var(--red-main);background:var(--surface2)}
+.choice-opt .opt-label{color:var(--red-main);font-weight:700;flex-shrink:0}
+.choice-opt.correct{border-color:var(--green);background:#00ff8815}
+.choice-opt.wrong{border-color:var(--red);background:#ff336615}
+
+/* FILL BLANKS */
+.fill-wrap{max-width:750px;width:100%}
+.fill-desc{background:var(--surface);border-left:3px solid var(--purple);padding:1rem;margin-bottom:1rem;border-radius:0 8px 8px 0;font-size:.85rem;color:var(--text2);line-height:1.5}
+.fill-passage{background:#0d0d1a;border:1px solid #ffffff10;border-radius:8px;padding:1.2rem;font-size:.9rem;line-height:2;color:var(--text)}
+.fill-blank{display:inline-block;min-width:80px;border-bottom:2px dashed var(--red-main);padding:2px 6px;margin:0 2px;background:var(--bg2);font-size:.85rem;color:var(--gold);outline:none;text-align:center;transition:all .2s;border-radius:3px 3px 0 0}
+.fill-blank:focus{border-bottom-color:var(--cyan);background:var(--bg3)}
+.fill-blank.correct{border-bottom-color:var(--green);color:var(--green);background:#00ff8810}
+.fill-blank.wrong{border-bottom-color:var(--red);color:var(--red);background:#ff336610}
+
+/* TIMELINE / CODE BUILDER (reused for sorting) */
+.sort-wrap{display:flex;gap:2rem;width:100%;max-width:800px;flex-wrap:wrap;justify-content:center}
+.sort-task{width:100%;background:var(--surface);border:1px solid var(--red-main);border-radius:8px;padding:1rem 1.2rem;margin-bottom:.5rem}
+.sort-task-label{font-size:.7rem;color:var(--red-main);letter-spacing:.15em;margin-bottom:.4rem;font-weight:700}
+.sort-task-desc{font-size:.9rem;line-height:1.5;color:var(--text)}
+.sort-dropzone{flex:1;min-width:300px;min-height:200px;background:var(--surface);border:2px dashed #ffffff15;border-radius:8px;padding:.8rem;display:flex;flex-direction:column;gap:6px;transition:border-color .2s}
+.sort-dropzone.over{border-color:var(--red-main)}
+.sort-source{flex:1;min-width:250px;display:flex;flex-direction:column;gap:6px;padding:.8rem}
+.sort-block{font-size:.8rem;padding:.7rem 1rem;background:var(--bg3);border:1px solid #ffffff15;border-radius:6px;cursor:grab;user-select:none;transition:all .2s;color:var(--text);line-height:1.4}
+.sort-block:hover{border-color:var(--red-main);background:var(--surface2)}
+.sort-block.dragging{opacity:.4;transform:scale(.95)}
+.sort-block.correct{border-color:var(--green);background:#00ff8810}
+.sort-block.wrong{border-color:var(--red);background:#ff336610;animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ERROR CORRECTION (Bug Hunter style) */
+.errcorr-wrap{max-width:750px;width:100%}
+.ec-desc{background:var(--surface);border-left:3px solid var(--red);padding:1rem;margin-bottom:1rem;border-radius:0 8px 8px 0;font-size:.85rem;color:var(--text2);line-height:1.5}
+.ec-editor{background:#0d0d1a;border:1px solid #ffffff10;border-radius:8px;overflow:hidden}
+.ec-editor-header{background:var(--surface);padding:.5rem 1rem;display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--text2)}
+.ec-editor-header .dot{width:8px;height:8px;border-radius:50%}
+.ec-line{display:flex;align-items:flex-start;padding:.4rem .8rem;cursor:pointer;transition:background .15s;border-left:3px solid transparent;font-size:.85rem;line-height:1.6}
+.ec-line:hover{background:#ffffff06}
+.ec-line.selected{background:#ff336615;border-left-color:var(--red)}
+.ec-line.correct-bug{background:#00ff8815;border-left-color:var(--green)}
+.ec-line.missed-bug{background:#ff660020;border-left-color:var(--orange)}
+
+/* MAZE */
+.maze-container{width:100%;height:100%;position:relative;overflow:hidden}
+.maze-viewport{width:100%;height:100%;perspective:600px;display:flex;align-items:center;justify-content:center}
+.maze-grid-wrap{transform-style:preserve-3d;transform:rotateX(55deg) rotateZ(0deg);transition:transform .3s}
+.maze-grid{display:grid;gap:0;position:relative}
+.maze-cell{width:40px;height:40px;position:relative;border:1px solid #ffffff08}
+.maze-cell.wall{background:linear-gradient(145deg,#1a1a2e,#0d0d1a);border-color:#ffffff04;box-shadow:inset 0 0 10px #00000066}
+.maze-cell.path{background:#12122044}
+.maze-cell.player{background:var(--red-main);box-shadow:0 0 20px var(--red-glow);border-radius:4px;z-index:5}
+.maze-cell.question-cell{background:#D4232C15;border-color:var(--red-main);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--red-main);animation:glowPulse 2s infinite}
+.maze-cell.exit{background:var(--gold);box-shadow:0 0 20px var(--gold-glow);border-radius:4px}
+.maze-cell.visited{background:#D4232C08}
+.maze-question-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;background:var(--surface);border:2px solid var(--red-main);border-radius:12px;padding:1.5rem;max-width:500px;width:90%;box-shadow:0 0 60px #00000088,0 0 0 9999px #00000088}
+.maze-question-popup h3{font-size:.85rem;color:var(--red-main);margin-bottom:.8rem;font-weight:700}
+.maze-question-popup .mq-options{display:flex;flex-direction:column;gap:.5rem}
+.maze-question-popup .mq-opt{padding:.6rem .8rem;background:var(--bg2);border:1px solid #ffffff15;border-radius:6px;cursor:pointer;font-size:.8rem;transition:all .15s;line-height:1.5}
+.maze-question-popup .mq-opt:hover{border-color:var(--red-main)}
+
+/* EXAM SCREEN */
+.exam-wrap{max-width:750px;width:100%}
+.exam-progress{width:100%;height:4px;background:var(--bg3);border-radius:2px;margin-bottom:1rem;overflow:hidden}
+.exam-progress-bar{height:100%;background:linear-gradient(90deg,var(--red-main),var(--gold));transition:width .3s;border-radius:2px}
+.exam-result-card{background:var(--surface);border:2px solid var(--gold);border-radius:16px;padding:2rem;text-align:center;max-width:500px;width:100%}
+.exam-pass{border-color:var(--green);background:linear-gradient(145deg,#0a1f0a,#0d1a0d)}
+.exam-fail{border-color:var(--red);background:linear-gradient(145deg,#1f0a0a,#1a0d0d)}
+.exam-score-big{font-size:3rem;font-weight:900;margin:.5rem 0}
+.exam-label{font-size:.8rem;color:var(--text2);margin-bottom:.3rem}
+
+/* MODE PICKER */
+.mode-picker-overlay{position:fixed;inset:0;z-index:10001;background:#000000cc;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.mode-picker-overlay.active{opacity:1;pointer-events:auto}
+.mode-picker-box{background:var(--surface);border:2px solid var(--red-main);border-radius:16px;padding:2rem;max-width:400px;width:90%;text-align:center}
+.mode-picker-title{font-size:1.1rem;color:var(--red-main);margin-bottom:.3rem;font-weight:900}
+.mode-picker-sub{font-size:.8rem;color:var(--text2);margin-bottom:1.5rem}
+.mode-picker-btns{display:flex;flex-direction:column;gap:.8rem}
+.mode-pick-btn{padding:1rem;background:var(--bg2);border:1px solid #ffffff15;border-radius:10px;cursor:pointer;transition:all .2s;text-align:left}
+.mode-pick-btn:hover{border-color:var(--cyan);background:var(--bg3)}
+.mode-pick-btn .mpb-title{font-size:.85rem;margin-bottom:.2rem;font-weight:700}
+.mode-pick-btn .mpb-desc{font-size:.7rem;color:var(--text2);line-height:1.4}
+.mode-pick-btn.pick-normal .mpb-title{color:var(--cyan)}
+.mode-pick-btn.pick-endless .mpb-title{color:var(--gold)}
+.mode-pick-back{margin-top:1rem;font-size:.75rem;color:var(--text2);cursor:pointer;border:none;background:none;font-family:inherit}
+.mode-pick-back:hover{color:var(--text)}
+
+/* RESULT OVERLAY */
+.result-overlay{position:fixed;inset:0;z-index:80;background:#0a0a12ee;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;backdrop-filter:blur(10px)}
+.result-overlay.active{display:flex}
+.result-stars{font-size:3rem;display:flex;gap:.5rem}
+.result-stars .star{color:#333;transition:all .3s}
+.result-stars .star.earned{color:var(--gold);text-shadow:0 0 20px #ffd70066;animation:starPop .5s cubic-bezier(.17,.67,.29,1.53)}
+@keyframes starPop{0%{transform:scale(0) rotate(-30deg)}100%{transform:scale(1) rotate(0)}}
+.result-score{font-size:2rem;color:var(--red-main);font-weight:900}
+.result-msg{font-size:1rem;color:var(--text2);text-align:center;max-width:400px}
+
+/* PARTICLES */
+.particle{position:fixed;pointer-events:none;z-index:90;border-radius:50%;animation:particleFly 1s forwards}
+@keyframes particleFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--red-main)}
+
+/* SCANLINE */
+body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none !important;background:repeating-linear-gradient(0deg,transparent,transparent 2px,#00000008 2px,#00000008 4px);opacity:.3;touch-action:none}
+
+/* MOBILE CONTROLS */
+.mobile-controls{position:absolute;bottom:1.5rem;right:1.5rem;display:grid;grid-template-columns:repeat(3,50px);grid-template-rows:repeat(3,50px);gap:4px;z-index:30}
+.mobile-controls button{background:var(--surface);border:1px solid var(--red-main);color:var(--red-main);font-size:1.2rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.7;transition:all .15s}
+.mobile-controls button:active{background:var(--red-main);color:#fff;opacity:1}
+@media(min-width:769px){.mobile-controls{display:grid;opacity:.5}.mobile-controls:hover{opacity:1}}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .hub-ring{width:500px;height:500px}.portal{width:100px;height:120px}.portal-icon{font-size:1.5rem}.portal-name{font-size:.65rem}
+  .memory-grid{grid-template-columns:repeat(4,1fr);gap:8px;max-width:500px}
+  .sort-wrap{flex-direction:column}
+}
+@media(max-width:500px){
+  .hub-ring{width:360px;height:360px}.portal{width:80px;height:95px}.portal-icon{font-size:1.2rem}.portal-name{font-size:.55rem}
+  .memory-grid{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+
+<!-- SPLASH -->
+<div id="splash" class="screen active">
+  <div class="splash-badge">2025 思政复习神器</div>
+  <div class="splash-title">习近平新时代<br>中国特色社会主义思想</div>
+  <div class="splash-sub">概 论 · 闯 关 冒 险</div>
+  <button class="btn" onclick="startGame()">启 动 学 习 系 统</button>
+</div>
+
+<!-- HUB -->
+<div id="hub" class="screen">
+  <div class="hub-header">
+    <div class="hub-title">&#9733; 学习大厅 &#9733;</div>
+    <div class="hub-stats">
+      <div class="stat"><span>&#9733;</span><span class="val" id="totalStars">0</span><span>/30</span></div>
+      <div class="stat"><span>&#9670;</span><span class="val" id="totalScore">0</span></div>
+    </div>
+  </div>
+  <div class="hub-scene"><div class="hub-ring" id="hubRing"></div></div>
+</div>
+
+<!-- GAME SCREENS -->
+<div id="gameMemory" class="screen game-screen"></div>
+<div id="gameChoice" class="screen game-screen"></div>
+<div id="gameFill" class="screen game-screen"></div>
+<div id="gameTimeline" class="screen game-screen"></div>
+<div id="gameError" class="screen game-screen"></div>
+<div id="gameConnect" class="screen game-screen"></div>
+<div id="gameMaze" class="screen game-screen"></div>
+<div id="gameKeyword" class="screen game-screen"></div>
+<div id="gameJudge" class="screen game-screen"></div>
+<div id="gameExam" class="screen game-screen"></div>
+
+<!-- MODE PICKER -->
+<div class="mode-picker-overlay" id="modePicker"></div>
+
+<!-- RESULT OVERLAY -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-stars" id="resultStars"></div>
+  <div class="result-score" id="resultScore"></div>
+  <div class="result-msg" id="resultMsg"></div>
+  <div style="display:flex;gap:1rem;margin-top:1rem">
+    <button class="btn btn-sm" onclick="goHub()">返回大厅</button>
+    <button class="btn btn-sm btn-cyan" onclick="replayMode()">再来一次</button>
+  </div>
+</div>
+
+<script>
+// ===================== AUDIO ENGINE =====================
+const AudioEngine={ctx:null,init(){try{this.ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}},play(type){try{if(!this.ctx)this.init();if(!this.ctx)return;const c=this.ctx,now=c.currentTime;if(c.state==='suspended')c.resume();const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);const presets={click:{f:800,d:.08,t:'sine'},correct:{f:523,d:.15,t:'sine',f2:659},wrong:{f:200,d:.2,t:'sawtooth'},flip:{f:1200,d:.06,t:'sine'},star:{f:880,d:.3,t:'sine',f2:1318},type:{f:600+Math.random()*400,d:.03,t:'square'},complete:{f:523,d:.5,t:'sine'}};const p=presets[type]||presets.click;o.type=p.t;o.frequency.setValueAtTime(p.f,now);if(p.f2)o.frequency.linearRampToValueAtTime(p.f2,now+p.d);g.gain.setValueAtTime(.15,now);g.gain.exponentialRampToValueAtTime(.001,now+p.d);o.start(now);o.stop(now+p.d)}catch(e){}}};
+
+// ===================== BACKGROUND PARTICLES =====================
+const bgCanvas=document.getElementById('bgCanvas');const bgCtx=bgCanvas.getContext('2d');let bgParticles=[];
+function initBg(){bgCanvas.width=window.innerWidth;bgCanvas.height=window.innerHeight;bgParticles=Array.from({length:80},()=>({x:Math.random()*bgCanvas.width,y:Math.random()*bgCanvas.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.5+.5,a:Math.random()*.5+.1}))}
+function drawBg(){bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);bgParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=bgCanvas.width;if(p.x>bgCanvas.width)p.x=0;if(p.y<0)p.y=bgCanvas.height;if(p.y>bgCanvas.height)p.y=0;bgCtx.beginPath();bgCtx.arc(p.x,p.y,p.r,0,Math.PI*2);bgCtx.fillStyle=`rgba(212,35,44,${p.a})`;bgCtx.fill()});for(let i=0;i<bgParticles.length;i++){for(let j=i+1;j<bgParticles.length;j++){const dx=bgParticles[i].x-bgParticles[j].x;const dy=bgParticles[i].y-bgParticles[j].y;const d=Math.sqrt(dx*dx+dy*dy);if(d<120){bgCtx.beginPath();bgCtx.moveTo(bgParticles[i].x,bgParticles[i].y);bgCtx.lineTo(bgParticles[j].x,bgParticles[j].y);bgCtx.strokeStyle=`rgba(212,35,44,${.05*(1-d/120)})`;bgCtx.stroke()}}}requestAnimationFrame(drawBg)}
+initBg();drawBg();window.addEventListener('resize',initBg);
+
+// ===================== CELEBRATION PARTICLES =====================
+function spawnParticles(x,y,color='#D4232C',count=12){for(let i=0;i<count;i++){const p=document.createElement('div');p.className='particle';const angle=(Math.PI*2/count)*i;const dist=40+Math.random()*60;p.style.cssText=`left:${x}px;top:${y}px;width:6px;height:6px;background:${color};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px`;document.body.appendChild(p);setTimeout(()=>p.remove(),1000)}}
+
+// ===================== STATE MANAGEMENT =====================
+let state={totalScore:0,stars:{memory:0,choice:0,fill:0,timeline:0,error:0,connect:0,maze:0,keyword:0,judge:0,exam:0},unlocked:['memory','choice','fill','judge'],currentMode:null,examPassed:false};
+function saveState(){localStorage.setItem('xism_adventure_v1',JSON.stringify(state));const se=document.getElementById('totalStars');const sc=document.getElementById('totalScore');if(se)se.textContent=Object.values(state.stars).reduce((a,b)=>a+b,0);if(sc)sc.textContent=state.totalScore}
+function loadState(){const s=localStorage.getItem('xism_adventure_v1');if(s){try{Object.assign(state,JSON.parse(s))}catch(e){}}checkUnlocks();saveState()}
+function checkUnlocks(){const t=Object.values(state.stars).reduce((a,b)=>a+b,0);if(!state.unlocked.includes('choice'))state.unlocked.push('choice');if(!state.unlocked.includes('fill'))state.unlocked.push('fill');if(!state.unlocked.includes('judge'))state.unlocked.push('judge');if(t>=2&&!state.unlocked.includes('timeline'))state.unlocked.push('timeline');if(t>=3&&!state.unlocked.includes('error'))state.unlocked.push('error');if(t>=4&&!state.unlocked.includes('connect'))state.unlocked.push('connect');if(t>=5&&!state.unlocked.includes('keyword'))state.unlocked.push('keyword');if(t>=6&&!state.unlocked.includes('maze'))state.unlocked.push('maze');if(t>=8&&!state.unlocked.includes('exam'))state.unlocked.push('exam')}
+
+// ===================== SCREEN MANAGEMENT =====================
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function startGame(){AudioEngine.init();AudioEngine.play('click');showScreen('hub');loadState();buildHub()}
+function goHub(){AudioEngine.play('click');state.currentMode=null;document.getElementById('resultOverlay').classList.remove('active');checkUnlocks();saveState();buildHub();showScreen('hub')}
+let lastMode=null;function replayMode(){AudioEngine.play('click');document.getElementById('resultOverlay').classList.remove('active');if(lastMode)launchMode(lastMode)}
+function showResult(modeId,score,maxScore){const pct=score/maxScore;const stars=pct>=.9?3:pct>=.6?2:pct>=.3?1:0;if(stars>state.stars[modeId])state.stars[modeId]=stars;state.totalScore+=score;saveState();const msgs=['继续努力！加油！','初窥门径，继续深入！','融会贯通！','大师级表现！'];document.getElementById('resultStars').innerHTML=[0,1,2].map((s,i)=>`<span class="star${i<stars?' earned':''}" style="animation-delay:${i*.2}s">${i<stars?'★':'☆'}</span>`).join('');document.getElementById('resultScore').textContent=`${score} / ${maxScore}`;document.getElementById('resultMsg').textContent=msgs[stars];setTimeout(()=>{document.getElementById('resultOverlay').classList.add('active');if(stars>0)AudioEngine.play('star')},300)}
+function makeGameHeader(title,screenId,extraHtml=''){return `<div class="game-header"><div class="game-header-left"><button class="back-btn" onclick="goHub()">◂</button><div class="game-title">${title}</div></div><div class="game-header-right">${extraHtml}</div></div>`}
+
+// ===================== HUB WORLD =====================
+const modes=[
+  {id:'memory',name:'核心概念配对',icon:'🃏',screen:'gameMemory'},
+  {id:'choice',name:'知识选择题',icon:'📝',screen:'gameChoice'},
+  {id:'fill',name:'原文填空',icon:'✏️',screen:'gameFill'},
+  {id:'judge',name:'判断正误',icon:'⚖️',screen:'gameJudge'},
+  {id:'timeline',name:'时间线排序',icon:'📅',screen:'gameTimeline'},
+  {id:'error',name:'纠错大师',icon:'🔍',screen:'gameError'},
+  {id:'connect',name:'概念连线',icon:'🔗',screen:'gameConnect'},
+  {id:'keyword',name:'关键词速记',icon:'⌨️',screen:'gameKeyword'},
+  {id:'maze',name:'思想迷宫',icon:'🏛️',screen:'gameMaze'},
+  {id:'exam',name:'期末模拟',icon:'🎓',screen:'gameExam'},
+];
+function buildHub(){const ring=document.getElementById('hubRing');ring.innerHTML='';const n=modes.length;const radius=Math.min(window.innerWidth,window.innerHeight)*.28;modes.forEach((m,i)=>{const angle=(2*Math.PI/n)*i-Math.PI/2;const x=Math.cos(angle)*radius;const z=Math.sin(angle)*radius;const portal=document.createElement('div');const locked=!state.unlocked.includes(m.id);const unlockReqs={timeline:2,error:3,connect:4,keyword:5,maze:6,exam:8};const reqText=unlockReqs[m.id]?`需要 ${unlockReqs[m.id]} 颗星解锁`:'';portal.className=`portal${locked?' locked':''}`;portal.style.transform=`translate(-50%,-50%) translateX(${x}px) translateZ(${z}px)`;portal.dataset.baseAngle=((360/n)*i).toString();portal.dataset.posX=x.toString();portal.dataset.posZ=z.toString();const stars=[0,1,2].map(s=>`<span class="star${s<state.stars[m.id]?' earned':''}">★</span>`).join('');portal.innerHTML=`<div class="portal-inner"><div class="portal-icon">${m.icon}</div><div class="portal-name">${m.name}</div><div class="portal-stars">${stars}</div>${locked?`<div class="lock-icon">🔒</div><div style="position:absolute;bottom:6px;font-size:.5rem;color:var(--text2)">${reqText}</div>`:''}</div>`;if(!locked)portal.addEventListener('click',()=>{AudioEngine.play('click');launchMode(m.id)});ring.appendChild(portal)})}
+function launchMode(id){lastMode=id;state.currentMode=id;doLaunchMode(id)}
+function doLaunchMode(id){switch(id){case'memory':initMemory();break;case'choice':initChoice();break;case'fill':initFill();break;case'timeline':initTimeline();break;case'error':initError();break;case'connect':initConnect();break;case'maze':initMaze();break;case'keyword':initKeyword();break;case'judge':initJudge();break;case'exam':initExam();break}}
+// ===================== KNOWLEDGE BASE =====================
+// Memory card pairs: term <-> definition
+const memoryData=[
+  {term:'两个确立',def:'确立习近平同志党中央的核心、全党的核心地位；确立习近平新时代中国特色社会主义思想的指导地位'},
+  {term:'两个维护',def:'坚决维护习近平总书记核心地位；坚决维护党中央权威和集中统一领导'},
+  {term:'四个意识',def:'政治意识、大局意识、核心意识、看齐意识'},
+  {term:'四个自信',def:'道路自信、理论自信、制度自信、文化自信'},
+  {term:'五位一体',def:'经济建设、政治建设、文化建设、社会建设、生态文明建设'},
+  {term:'四个全面',def:'全面建设社会主义现代化国家、全面深化改革、全面依法治国、全面从严治党'},
+  {term:'新发展理念',def:'创新、协调、绿色、开放、共享'},
+  {term:'中国梦',def:'实现中华民族伟大复兴'},
+  {term:'社会主要矛盾',def:'人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾'},
+  {term:'两个一百年',def:'建党百年全面建成小康社会；建国百年建成社会主义现代化强国'},
+  {term:'总体国家安全观',def:'以人民安全为宗旨，以政治安全为根本，以经济安全为基础，以军事、科技、文化、社会安全为保障'},
+  {term:'人类命运共同体',def:'建设持久和平、普遍安全、共同繁荣、开放包容、清洁美丽的世界'},
+  {term:'全过程人民民主',def:'最广泛、最真实、最管用的社会主义民主，实现过程民主和成果民主、程序民主和实质民主的统一'},
+  {term:'共同富裕',def:'全体人民通过辛勤劳动和相互帮助最终达到丰衣足食的生活水平，是社会主义的本质要求'},
+  {term:'党的自我革命',def:'刀刃向内、刮骨疗毒，坚持不懈把全面从严治党向纵深推进'},
+  {term:'一带一路',def:'丝绸之路经济带和21世纪海上丝绸之路，推动构建人类命运共同体的重要实践平台'},
+  {term:'新发展格局',def:'以国内大循环为主体、国内国际双循环相互促进'},
+  {term:'高质量发展',def:'新时代经济发展的鲜明主题，体现新发展理念的发展'},
+  {term:'社会主义核心价值观',def:'富强、民主、文明、和谐；自由、平等、公正、法治；爱国、敬业、诚信、友善'},
+  {term:'中国式现代化',def:'人口规模巨大、全体人民共同富裕、物质文明和精神文明相协调、人与自然和谐共生、走和平发展道路的现代化'},
+];
+
+// Choice questions (single answer)
+const choiceData=[
+  {q:'中国特色社会主义最本质的特征是什么？',opts:['中国共产党领导','人民当家作主','依法治国','社会主义市场经济'],ans:0,exp:'党的领导是中国特色社会主义最本质的特征，是中国特色社会主义制度的最大优势。'},
+  {q:'新时代我国社会主要矛盾是什么？',opts:['人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾','人民日益增长的物质文化需要同落后的社会生产之间的矛盾','生产力和生产关系的矛盾','经济基础和上层建筑的矛盾'],ans:0,exp:'党的十九大明确指出我国社会主要矛盾已经转化。'},
+  {q:'"两个一百年"奋斗目标中，第二个百年目标是什么？',opts:['到新中国成立100年时建成社会主义现代化强国','到建党100年时全面建成小康社会','到2035年基本实现现代化','到2030年实现碳达峰'],ans:0,exp:'第一个百年目标是建党百年时全面建成小康社会，已于2021年实现；第二个是建国百年时建成社会主义现代化强国。'},
+  {q:'新发展理念中，"创新"被放在什么位置？',opts:['国家发展全局的核心位置','经济发展的基础位置','社会发展的辅助位置','科技发展的边缘位置'],ans:0,exp:'创新是引领发展的第一动力，必须把创新摆在国家发展全局的核心位置。'},
+  {q:'全面建设社会主义现代化国家的首要任务是什么？',opts:['高质量发展','科技自立自强','共同富裕','全面深化改革'],ans:0,exp:'党的二十大报告指出：高质量发展是全面建设社会主义现代化国家的首要任务。'},
+  {q:'中国式现代化的本质要求不包括以下哪项？',opts:['实行西方式议会民主','坚持中国共产党领导','实现全体人民共同富裕','推动构建人类命运共同体'],ans:0,exp:'中国式现代化坚持中国共产党领导，走中国特色社会主义道路，不照搬西方模式。'},
+  {q:'习近平新时代中国特色社会主义思想的核心要义是什么？',opts:['坚持和发展中国特色社会主义','实现中华民族伟大复兴','建设社会主义现代化强国','构建人类命运共同体'],ans:0,exp:'这一思想的核心要义就是坚持和发展中国特色社会主义。'},
+  {q:'新时代坚持和发展中国特色社会主义的总任务是什么？',opts:['实现社会主义现代化和中华民族伟大复兴','全面建成小康社会','建设社会主义市场经济','推进改革开放'],ans:0,exp:'在全面建成小康社会的基础上，分两步走，到本世纪中叶建成社会主义现代化强国。'},
+  {q:'"四个全面"战略布局中的战略目标是什么？',opts:['全面建设社会主义现代化国家','全面深化改革','全面依法治国','全面从严治党'],ans:0,exp:'全面建设社会主义现代化国家是战略目标，其余三个是战略举措。'},
+  {q:'党的二十大报告指出，教育、科技、人才是什么？',opts:['全面建设社会主义现代化国家的基础性、战略性支撑','经济发展的唯一动力','国际竞争的核心要素','文化自信的根本保障'],ans:0,exp:'必须坚持科技是第一生产力、人才是第一资源、创新是第一动力。'},
+  {q:'全面依法治国总目标是什么？',opts:['建设中国特色社会主义法治体系、建设社会主义法治国家','实现司法公正','消灭一切犯罪','建立西方式法治体系'],ans:0,exp:'建设中国特色社会主义法治体系、建设社会主义法治国家。'},
+  {q:'社会主义核心价值观在国家层面的内容是？',opts:['富强、民主、文明、和谐','自由、平等、公正、法治','爱国、敬业、诚信、友善','创新、协调、绿色、开放'],ans:0,exp:'国家层面：富强、民主、文明、和谐；社会层面：自由、平等、公正、法治；个人层面：爱国、敬业、诚信、友善。'},
+  {q:'绿水青山就是金山银山体现了什么理念？',opts:['绿色发展理念','创新发展理念','开放发展理念','共享发展理念'],ans:0,exp:'习近平总书记提出的"两山"理论，是绿色发展理念的生动体现。'},
+  {q:'一国两制的根本宗旨是什么？',opts:['维护国家主权、安全、发展利益，保持港澳长期繁荣稳定','在港澳实行资本主义制度','实现完全自治','推行西方民主'],ans:0,exp:'一国两制的根本宗旨是维护国家主权、安全、发展利益，保持香港、澳门长期繁荣稳定。'},
+  {q:'总体国家安全观的宗旨是什么？',opts:['以人民安全为宗旨','以政治安全为宗旨','以经济安全为宗旨','以军事安全为宗旨'],ans:0,exp:'以人民安全为宗旨，以政治安全为根本，以经济安全为基础。'},
+  {q:'新时代党的建设总要求是以什么为统领？',opts:['党的政治建设','党的思想建设','党的组织建设','党的纪律建设'],ans:0,exp:'以党的政治建设为统领，全面推进党的政治建设、思想建设、组织建设、作风建设、纪律建设。'},
+  {q:'构建新发展格局的关键在于什么？',opts:['经济循环的畅通无阻','扩大出口','减少进口','增加政府支出'],ans:0,exp:'构建新发展格局的关键在于经济循环的畅通无阻，最本质的特征是实现高水平的自立自强。'},
+  {q:'人民代表大会制度是我国的什么？',opts:['根本政治制度','基本政治制度','重要政治制度','一般政治制度'],ans:0,exp:'人民代表大会制度是我国的根本政治制度，是人民当家作主的根本途径和最高实现形式。'},
+  {q:'中国共产党的最大政治优势是什么？',opts:['密切联系群众','武装斗争','统一战线','党的建设'],ans:0,exp:'密切联系群众是我们党的最大政治优势，脱离群众是我们党执政后的最大危险。'},
+  {q:'推动构建新型国际关系的核心是什么？',opts:['相互尊重、公平正义、合作共赢','结盟对抗','单边主义','经济制裁'],ans:0,exp:'推动建设相互尊重、公平正义、合作共赢的新型国际关系。'},
+];
+
+// Fill blanks data
+const fillData=[
+  {desc:'关于新时代社会主要矛盾',passage:'我国社会主要矛盾已经转化为人民日益增长的<BLANK>需要和<BLANK>的发展之间的矛盾。',blanks:['美好生活','不平衡不充分'],exp:'十九大报告作出了这一重大政治论断。'},
+  {desc:'关于四个自信',passage:'坚持中国特色社会主义<BLANK>自信、<BLANK>自信、<BLANK>自信、<BLANK>自信。',blanks:['道路','理论','制度','文化'],exp:'文化自信是更基础、更广泛、更深厚的自信，是更基本、更深沉、更持久的力量。'},
+  {desc:'关于新发展理念',passage:'坚持<BLANK>、<BLANK>、<BLANK>、<BLANK>、<BLANK>的新发展理念。',blanks:['创新','协调','绿色','开放','共享'],exp:'新发展理念是关系我国发展全局的一场深刻变革。'},
+  {desc:'关于社会主义核心价值观（国家层面）',passage:'富强、<BLANK>、文明、<BLANK>是国家层面的价值目标。',blanks:['民主','和谐'],exp:'社会主义核心价值观分国家、社会、个人三个层面。'},
+  {desc:'关于中国式现代化的特征',passage:'中国式现代化是<BLANK>规模巨大的现代化，是全体人民<BLANK>的现代化，是物质文明和<BLANK>相协调的现代化。',blanks:['人口','共同富裕','精神文明'],exp:'中国式现代化有五大特征。'},
+  {desc:'关于总体国家安全观',passage:'以<BLANK>安全为宗旨，以<BLANK>安全为根本，以<BLANK>安全为基础。',blanks:['人民','政治','经济'],exp:'总体国家安全观是习近平总书记创造性提出的。'},
+  {desc:'关于四个全面',passage:'协调推进全面建设社会主义<BLANK>国家、全面<BLANK>改革、全面<BLANK>治国、全面从严<BLANK>。',blanks:['现代化','深化','依法','治党'],exp:'四个全面是新时代的战略布局。'},
+  {desc:'关于人类命运共同体',passage:'推动建设<BLANK>和平、普遍安全、共同繁荣、<BLANK>包容、清洁美丽的世界。',blanks:['持久','开放'],exp:'人类命运共同体理念的五大方面。'},
+  {desc:'关于新发展格局',passage:'加快构建以<BLANK>大循环为主体、国内国际<BLANK>循环相互促进的新发展格局。',blanks:['国内','双'],exp:'新发展格局是应对复杂局势的战略选择。'},
+  {desc:'关于党的领导',passage:'中国共产党领导是中国特色社会主义最<BLANK>的特征，是中国特色社会主义制度的最大<BLANK>。',blanks:['本质','优势'],exp:'这是党的十九大报告的重要论断。'},
+  {desc:'关于全过程人民民主',passage:'全过程人民民主是最<BLANK>、最<BLANK>、最<BLANK>的社会主义民主。',blanks:['广泛','真实','管用'],exp:'全过程人民民主把选举民主与协商民主结合起来。'},
+  {desc:'关于"两个确立"',passage:'确立习近平同志党中央的核心、全党的<BLANK>地位，确立习近平新时代中国特色社会主义思想的<BLANK>地位。',blanks:['核心','指导'],exp:'"两个确立"是新时代最重要的政治成果。'},
+];
+
+// Timeline sorting data
+const timelineData=[
+  {task:'将以下重大事件按时间先后排列',items:['十八大召开（2012）','提出"四个全面"（2014）','十九大召开（2017）','脱贫攻坚全面胜利（2021）','二十大召开（2022）'],exp:'把握好这些关键时间节点有助于理解新时代发展脉络。'},
+  {task:'将以下理论提出/写入的时间排列',items:['科学发展观写入党章（2007）','提出中国梦（2012）','提出总体国家安全观（2014）','提出新发展理念（2015）','提出人类命运共同体写入联合国决议（2017）'],exp:'理论创新的时间线反映了思想体系的逐步完善。'},
+  {task:'将社会主要矛盾的历史变迁排序',items:['新民主主义革命时期：帝国主义和中华民族的矛盾','社会主义改造完成后：人民对经济文化的需要与落后的社会生产','改革开放后：人民日益增长的物质文化需要同落后的社会生产的矛盾','新时代：人民日益增长的美好生活需要和不平衡不充分的发展的矛盾'],exp:'社会主要矛盾的变化是划分历史阶段的重要依据。'},
+  {task:'将"两步走"战略安排按时间排序',items:['2020年全面建成小康社会','2035年基本实现社会主义现代化','本世纪中叶建成社会主义现代化强国'],exp:'这是党的十九大提出的新时代中国特色社会主义发展的战略安排。'},
+  {task:'将以下改革开放重大事件排序',items:['建立经济特区（1980）','提出社会主义市场经济体制（1992）','加入WTO（2001）','提出"一带一路"倡议（2013）','设立海南自由贸易港（2020）'],exp:'改革开放是决定当代中国命运的关键一招。'},
+];
+
+// Error correction data (identify wrong statements)
+const errorData=[
+  {desc:'以下关于新时代中国特色社会主义的表述中，找出有错误的条目。',statements:['中国特色社会主义最本质的特征是中国共产党领导','新时代我国社会主要矛盾是人民日益增长的物质需要和落后生产力之间的矛盾','全面建设社会主义现代化国家的首要任务是高质量发展','党的政治建设是党的根本性建设'],errors:[1],exp:'正确表述：人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾。注意不是"物质需要"和"落后生产力"。'},
+  {desc:'找出以下关于"四个全面"表述中的错误。',statements:['全面建设社会主义现代化国家','全面深化改革','全面以德治国','全面从严治党'],errors:[2],exp:'应为"全面依法治国"而非"全面以德治国"。依法治国是基本方略。'},
+  {desc:'找出关于新发展理念的错误表述。',statements:['创新是引领发展的第一动力','协调是持续健康发展的内在要求','绿色是永续发展的必要条件','封闭是国家繁荣发展的必由之路','共享是中国特色社会主义的本质要求'],errors:[3],exp:'应为"开放"而非"封闭"。开放是国家繁荣发展的必由之路。'},
+  {desc:'找出关于总体国家安全观的错误表述。',statements:['以人民安全为宗旨','以军事安全为根本','以经济安全为基础','以军事、科技、文化、社会安全为保障'],errors:[1],exp:'应以"政治安全"为根本，而非"军事安全"为根本。'},
+  {desc:'找出关于中国式现代化特征的错误表述。',statements:['人口规模巨大的现代化','少数人先富的现代化','物质文明和精神文明相协调的现代化','人与自然和谐共生的现代化','走和平发展道路的现代化'],errors:[1],exp:'应为"全体人民共同富裕的现代化"，而非"少数人先富"。共同富裕是社会主义的本质要求。'},
+  {desc:'找出关于社会主义核心价值观的错误表述。',statements:['国家层面：富强、民主、文明、和谐','社会层面：自由、平等、公正、法治','个人层面：爱国、敬业、诚实、友善'],errors:[2],exp:'个人层面应为"诚信"而非"诚实"。完整表述：爱国、敬业、诚信、友善。'},
+  {desc:'找出关于"一国两制"的错误表述。',statements:['"一国两制"的根本宗旨是维护国家主权、安全、发展利益','中央对特别行政区拥有全面管治权','特别行政区享有完全独立的主权','爱国者治港、爱国者治澳'],errors:[2],exp:'特别行政区享有高度自治权，但不是完全独立的主权。主权属于中央。'},
+];
+
+// Concept connection data (match pairs)
+const connectData=[
+  {pairs:[['五位一体','总体布局'],['四个全面','战略布局'],['两个维护','政治纪律'],['新发展理念','发展引领']]},
+  {pairs:[['创新','第一动力'],['协调','内在要求'],['绿色','必要条件'],['开放','必由之路']]},
+  {pairs:[['富强民主文明和谐','国家层面'],['自由平等公正法治','社会层面'],['爱国敬业诚信友善','个人层面'],['社会主义核心价值观','价值引领']]},
+  {pairs:[['人民代表大会制度','根本政治制度'],['中国共产党领导的多党合作','基本政治制度'],['民族区域自治制度','基本政治制度'],['基层群众自治制度','基本政治制度']]},
+  {pairs:[['经济建设','中心工作'],['政治建设','根本保障'],['文化建设','灵魂工程'],['生态文明建设','千年大计']]},
+];
+
+// Maze questions
+const mazeQData=[
+  {q:'"两个一百年"中第一个百年目标是？',options:['全面建成小康社会','基本实现现代化','建成现代化强国','消除贫困'],correct:0,exp:'第一个百年目标已于2021年如期实现。'},
+  {q:'新发展理念共有几个方面？',options:['五个','四个','六个','三个'],correct:0,exp:'创新、协调、绿色、开放、共享五个方面。'},
+  {q:'社会主义的本质要求之一是？',options:['共同富裕','均分财富','平均主义','个人致富'],correct:0,exp:'共同富裕是社会主义的本质要求，不是平均主义。'},
+  {q:'党的最高理想和最终目标是？',options:['实现共产主义','建设小康社会','发展市场经济','实现现代化'],correct:0,exp:'中国共产党以实现共产主义为最高理想和最终目标。'},
+  {q:'"四个全面"的战略目标是？',options:['全面建设社会主义现代化国家','全面深化改革','全面依法治国','全面从严治党'],correct:0,exp:'战略目标是全面建设社会主义现代化国家，其余三个是战略举措。'},
+  {q:'中国共产党人的初心和使命是？',options:['为中国人民谋幸福，为中华民族谋复兴','实现个人理想','推翻旧制度','发展经济'],correct:0,exp:'不忘初心、牢记使命是党的建设的永恒课题。'},
+  {q:'全面深化改革的总目标是？',options:['完善和发展中国特色社会主义制度，推进国家治理体系和治理能力现代化','建立市场经济','消除贫富差距','实现法治社会'],correct:0,exp:'这是全面深化改革的总目标。'},
+  {q:'"五位一体"中不包括以下哪项？',options:['军事建设','经济建设','文化建设','生态文明建设'],correct:0,exp:'五位一体包括经济、政治、文化、社会、生态文明建设，不包括军事建设。'},
+  {q:'人类命运共同体理念最早在哪里提出？',options:['2012年党的十八大报告','2017年联合国日内瓦总部','2015年联合国峰会','2013年莫斯科'],correct:0,exp:'十八大报告首次提出"倡导人类命运共同体意识"。'},
+  {q:'以下哪项是基本政治制度？',options:['民族区域自治制度','人民代表大会制度','社会主义市场经济体制','一国两制'],correct:0,exp:'人民代表大会制度是根本政治制度，民族区域自治制度是基本政治制度。'},
+];
+
+// Keyword typing data
+const keywordData=[
+  {prompt:'说出"四个意识"的内容',answer:'政治意识、大局意识、核心意识、看齐意识',alts:['政治意识 大局意识 核心意识 看齐意识'],exp:'增强"四个意识"是党员的基本政治要求。'},
+  {prompt:'说出"五位一体"总体布局的五个方面',answer:'经济建设、政治建设、文化建设、社会建设、生态文明建设',alts:['经济 政治 文化 社会 生态文明'],exp:'五位一体是新时代中国特色社会主义事业总体布局。'},
+  {prompt:'新发展理念的五个方面是什么？',answer:'创新、协调、绿色、开放、共享',alts:['创新 协调 绿色 开放 共享'],exp:'五大发展理念是管全局、管根本、管长远的导向。'},
+  {prompt:'社会主义核心价值观个人层面的内容',answer:'爱国、敬业、诚信、友善',alts:['爱国 敬业 诚信 友善'],exp:'个人层面的价值准则。'},
+  {prompt:'"两个维护"的内容是什么？',answer:'维护习近平总书记核心地位、维护党中央权威和集中统一领导',alts:['维护核心地位 维护党中央权威'],exp:'两个维护是党的政治建设的首要任务。'},
+  {prompt:'中国式现代化的五个特征',answer:'人口规模巨大、全体人民共同富裕、物质文明和精神文明相协调、人与自然和谐共生、走和平发展道路',alts:['人口规模巨大 共同富裕 物质精神协调 人与自然和谐 和平发展'],exp:'这是中国式现代化区别于西方现代化的五大中国特色。'},
+  {prompt:'总体国家安全观的三个定位',answer:'以人民安全为宗旨、以政治安全为根本、以经济安全为基础',alts:['人民安全为宗旨 政治安全为根本 经济安全为基础'],exp:'总体国家安全观的核心要义。'},
+  {prompt:'人类命运共同体的五个世界',answer:'持久和平、普遍安全、共同繁荣、开放包容、清洁美丽',alts:['持久和平 普遍安全 共同繁荣 开放包容 清洁美丽'],exp:'建设五个世界是构建人类命运共同体的目标。'},
+];
+
+// Judge (true/false) data
+const judgeData=[
+  {stmt:'中国特色社会主义最本质的特征是社会主义市场经济。',correct:false,exp:'最本质的特征是中国共产党领导，不是社会主义市场经济。'},
+  {stmt:'新时代我国社会主要矛盾已经转化为人民日益增长的美好生活需要和不平衡不充分的发展之间的矛盾。',correct:true,exp:'这是党的十九大作出的重大政治论断。'},
+  {stmt:'全面建设社会主义现代化国家的首要任务是高质量发展。',correct:true,exp:'二十大报告明确提出。'},
+  {stmt:'"四个全面"中的四个战略举措地位相同，没有主次之分。',correct:false,exp:'全面建设社会主义现代化国家是战略目标，其他三个是战略举措，有主次之分。'},
+  {stmt:'文化自信是更基础、更广泛、更深厚的自信。',correct:true,exp:'文化自信是更基本、更深沉、更持久的力量。'},
+  {stmt:'人民代表大会制度是我国的基本政治制度。',correct:false,exp:'人民代表大会制度是根本政治制度，不是基本政治制度。'},
+  {stmt:'社会主义核心价值观社会层面的内容是自由、平等、公正、法治。',correct:true,exp:'这是社会层面的价值取向。'},
+  {stmt:'新发展格局是以国际大循环为主体、国内国际双循环相互促进。',correct:false,exp:'应为以"国内大循环"为主体，不是国际大循环。'},
+  {stmt:'共同富裕是社会主义的本质要求。',correct:true,exp:'共同富裕是中国特色社会主义的本质要求。'},
+  {stmt:'全过程人民民主是最广泛、最真实、最管用的社会主义民主。',correct:true,exp:'全过程人民民主是社会主义民主政治的本质属性。'},
+  {stmt:'总体国家安全观以军事安全为根本。',correct:false,exp:'以政治安全为根本，不是军事安全。'},
+  {stmt:'中国式现代化是走和平发展道路的现代化。',correct:true,exp:'这是中国式现代化的五个重要特征之一。'},
+  {stmt:'一带一路指的是丝绸之路经济带和21世纪海上丝绸之路。',correct:true,exp:'2013年提出的重大倡议。'},
+  {stmt:'党的自我革命就是要刀刃向内、刮骨疗毒。',correct:true,exp:'勇于自我革命是我们党最鲜明的品格。'},
+  {stmt:'绿水青山就是金山银山体现了开放发展理念。',correct:false,exp:'体现的是绿色发展理念，不是开放发展理念。'},
+  {stmt:'依法治国是党领导人民治理国家的基本方略。',correct:true,exp:'全面依法治国是中国特色社会主义的本质要求和重要保障。'},
+  {stmt:'中国共产党的最大政治优势是武装斗争。',correct:false,exp:'最大政治优势是密切联系群众，不是武装斗争。'},
+  {stmt:'高质量发展是体现新发展理念的发展。',correct:true,exp:'高质量发展就是从"有没有"转向"好不好"。'},
+];
+
+// Exam composite question pool (drawn from above categories)
+const examPool=[...choiceData.map(q=>({type:'choice',...q})),...judgeData.map(q=>({type:'judge',...q})),...mazeQData.map(q=>({type:'maze',...q}))];
+// ===================== MODE 1: MEMORY CARD FLIP =====================
+function initMemory(){
+  const screen=document.getElementById('gameMemory');
+  const pairs=shuffle([...memoryData]).slice(0,6);
+  let cards=[];
+  pairs.forEach(p=>{cards.push({type:'term',text:p.term,pairId:p.term});cards.push({type:'def',text:p.def,pairId:p.term})});
+  cards=shuffle(cards);
+  let flipped=[],matched=0,flips=0,score=0;const maxPairs=pairs.length;
+  screen.innerHTML=makeGameHeader('核心概念配对','gameMemory',`<span class="game-score">配对: <span id="memMatched">0</span>/${maxPairs}</span><span class="game-timer">翻牌: <span id="memFlips">0</span></span>`)+`<div class="game-body"><div class="memory-grid" id="memGrid"></div></div>`;
+  const grid=document.getElementById('memGrid');
+  cards.forEach((c,i)=>{const card=document.createElement('div');card.className='mem-card';card.dataset.idx=i;card.innerHTML=`<div class="mem-card-inner"><div class="mem-card-front"></div><div class="mem-card-back type-${c.type}">${escHtml(c.text)}</div></div>`;
+    card.addEventListener('click',()=>{if(flipped.length>=2||card.classList.contains('flipped')||card.classList.contains('matched'))return;AudioEngine.play('flip');card.classList.add('flipped');flipped.push({el:card,data:c});flips++;document.getElementById('memFlips').textContent=flips;
+      if(flipped.length===2){setTimeout(()=>{if(flipped[0].data.pairId===flipped[1].data.pairId&&flipped[0].data.type!==flipped[1].data.type){flipped.forEach(f=>f.el.classList.add('matched'));AudioEngine.play('correct');matched++;score+=Math.max(10,30-flips);const rect=flipped[0].el.getBoundingClientRect();spawnParticles(rect.left+rect.width/2,rect.top+rect.height/2,'#00FF88');document.getElementById('memMatched').textContent=matched;if(matched===maxPairs)setTimeout(()=>showResult('memory',score,maxPairs*30),600)}else{AudioEngine.play('wrong');flipped.forEach(f=>f.el.classList.remove('flipped'))}flipped=[]},800)}});grid.appendChild(card)});
+  showScreen('gameMemory');
+}
+
+// ===================== MODE 2: CHOICE QUESTIONS =====================
+function initChoice(){
+  const screen=document.getElementById('gameChoice');
+  const challenges=shuffle([...choiceData]).slice(0,8);
+  let currentQ=0,score=0;
+  function renderChoice(){
+    const ch=challenges[currentQ];const labels=['A','B','C','D'];
+    screen.innerHTML=makeGameHeader('知识选择题','gameChoice',`<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`)+`<div class="game-body"><div class="choice-wrap"><div class="choice-question">${currentQ+1}. ${escHtml(ch.q)}</div><div class="choice-options" id="choiceOpts"></div></div></div>`;
+    const optsEl=document.getElementById('choiceOpts');
+    ch.opts.forEach((o,i)=>{const opt=document.createElement('div');opt.className='choice-opt';opt.innerHTML=`<span class="opt-label">${labels[i]}.</span><span>${escHtml(o)}</span>`;
+      opt.addEventListener('click',()=>{optsEl.querySelectorAll('.choice-opt').forEach(el=>el.style.pointerEvents='none');
+        if(i===ch.ans){opt.classList.add('correct');AudioEngine.play('correct');score+=15;spawnParticles(window.innerWidth/2,window.innerHeight/2,'#00FF88')}else{opt.classList.add('wrong');AudioEngine.play('wrong');optsEl.children[ch.ans].classList.add('correct')}
+        const exp=document.createElement('div');exp.style.cssText='margin-top:1rem;padding:.8rem;background:#D4232C15;border-left:3px solid var(--red-main);border-radius:0 8px 8px 0;font-size:.8rem;color:var(--text);line-height:1.5';exp.textContent='💡 '+ch.exp;optsEl.parentElement.appendChild(exp);
+        const isLast=currentQ+1>=challenges.length;const nextBtn=document.createElement('button');nextBtn.className='btn btn-sm btn-cyan';nextBtn.style.cssText='margin-top:.8rem';nextBtn.textContent=isLast?'查看成绩':'下一题 ▸';nextBtn.addEventListener('click',()=>{AudioEngine.play('click');currentQ++;if(currentQ<challenges.length)renderChoice();else showResult('choice',score,challenges.length*15)});optsEl.parentElement.appendChild(nextBtn)});optsEl.appendChild(opt)});
+    showScreen('gameChoice');
+  }
+  renderChoice();
+}
+
+// ===================== MODE 3: FILL IN THE BLANKS =====================
+function initFill(){
+  const screen=document.getElementById('gameFill');
+  const challenges=shuffle([...fillData]).slice(0,6);
+  let currentQ=0,score=0;
+  function renderFill(){
+    const ch=challenges[currentQ];let blankIdx=0;
+    let passageHtml=escHtml(ch.passage);
+    while(passageHtml.includes('&lt;BLANK&gt;')){passageHtml=passageHtml.replace('&lt;BLANK&gt;',`<input class="fill-blank" data-blank="${blankIdx}" placeholder="?" style="width:${Math.max(60,ch.blanks[blankIdx].length*16)}px">`);blankIdx++}
+    screen.innerHTML=makeGameHeader('原文填空','gameFill',`<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`)+`<div class="game-body"><div class="fill-wrap"><div class="fill-desc">📖 ${ch.desc}</div><div class="fill-passage">${passageHtml}</div><div id="fillArea" style="margin-top:1rem"></div></div></div><div class="game-footer"><button class="btn btn-sm btn-cyan" id="fillSubmit">提交答案</button></div>`;
+    const firstBlank=screen.querySelector('.fill-blank[data-blank="0"]');if(firstBlank)setTimeout(()=>firstBlank.focus(),100);
+    screen.querySelectorAll('.fill-blank').forEach(inp=>{inp.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const nx=screen.querySelector(`.fill-blank[data-blank="${+inp.dataset.blank+1}"]`);if(nx)nx.focus();else document.getElementById('fillSubmit').focus()}if(e.key==='Enter'){e.preventDefault();document.getElementById('fillSubmit').click()}})});
+    document.getElementById('fillSubmit').addEventListener('click',()=>{const blanks=screen.querySelectorAll('.fill-blank');let allCorrect=true;
+      blanks.forEach(inp=>{const idx=+inp.dataset.blank;if(inp.value.trim()===ch.blanks[idx])inp.classList.add('correct');else{inp.classList.add('wrong');allCorrect=false;inp.value=ch.blanks[idx];inp.style.fontSize='.75rem'}inp.disabled=true});
+      if(allCorrect){AudioEngine.play('correct');score+=20;spawnParticles(window.innerWidth/2,window.innerHeight/2,'#00FF88',15)}else AudioEngine.play('wrong');
+      const area=document.getElementById('fillArea');if(ch.exp){const exp=document.createElement('div');exp.style.cssText='margin-top:.8rem;padding:.8rem;background:#D4232C15;border-left:3px solid var(--red-main);border-radius:0 8px 8px 0;font-size:.8rem;color:var(--text);line-height:1.5';exp.textContent='💡 '+ch.exp;area.appendChild(exp)}
+      const footer=screen.querySelector('.game-footer');const isLast=currentQ+1>=challenges.length;footer.innerHTML=`<button class="btn btn-sm btn-cyan" id="fillNext">${isLast?'查看成绩':'下一题 ▸'}</button>`;document.getElementById('fillNext').addEventListener('click',()=>{AudioEngine.play('click');currentQ++;if(currentQ<challenges.length)renderFill();else showResult('fill',score,challenges.length*20)})});
+    showScreen('gameFill');
+  }
+  renderFill();
+}
+
+// ===================== MODE 4: TIMELINE SORTING =====================
+function initTimeline(){
+  const screen=document.getElementById('gameTimeline');
+  const challenges=shuffle([...timelineData]).slice(0,3);
+  let currentQ=0,score=0;
+  function renderTimeline(){
+    const ch=challenges[currentQ];const shuffledItems=shuffle([...ch.items]);
+    screen.innerHTML=makeGameHeader('时间线排序','gameTimeline',`<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`)+`<div class="game-body"><div class="sort-wrap"><div class="sort-task"><div class="sort-task-label">▸ 任务描述</div><div class="sort-task-desc">${ch.task}</div></div><div style="flex:1;min-width:280px"><div style="font-size:.7rem;color:var(--green);letter-spacing:.1em;margin-bottom:.5rem;font-weight:700">▾ 排列区（按正确顺序从上到下）</div><div class="sort-dropzone" id="sortDrop"></div></div><div style="flex:1;min-width:220px"><div style="font-size:.7rem;color:var(--text2);letter-spacing:.1em;margin-bottom:.5rem;font-weight:700">▾ 事件（点击移动）</div><div class="sort-source" id="sortSource"></div></div></div></div><div class="game-footer"><button class="btn btn-sm btn-cyan" onclick="checkTimeline()">提交验证</button><button class="btn btn-sm" onclick="resetTimeline()">重置</button></div>`;
+    const source=document.getElementById('sortSource');const drop=document.getElementById('sortDrop');
+    shuffledItems.forEach((item,i)=>{const block=document.createElement('div');block.className='sort-block';block.textContent=item;block.dataset.idx=i;block.addEventListener('click',()=>{const d=document.getElementById('sortDrop');const s=document.getElementById('sortSource');if(block.parentElement===s)d.appendChild(block);else s.appendChild(block);AudioEngine.play('click')});source.appendChild(block)});
+    drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('over')});drop.addEventListener('dragleave',()=>drop.classList.remove('over'));drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('over')});
+    showScreen('gameTimeline');
+  }
+  window.checkTimeline=()=>{const drop=document.getElementById('sortDrop');const blocks=drop.querySelectorAll('.sort-block');const ch=challenges[currentQ];const userOrder=Array.from(blocks).map(b=>b.textContent);let correct=true;
+    blocks.forEach((b,i)=>{if(b.textContent===ch.items[i])b.classList.add('correct');else{b.classList.add('wrong');correct=false}});if(userOrder.length!==ch.items.length)correct=false;
+    if(correct){AudioEngine.play('correct');score+=25;spawnParticles(window.innerWidth/2,window.innerHeight/2,'#00FF88',20)}else AudioEngine.play('wrong');
+    const wrap=screen.querySelector('.sort-wrap');if(!correct){const correctBox=document.createElement('div');correctBox.style.cssText='width:100%;margin-top:1rem;padding:1rem;background:#00ff8808;border:1px solid var(--green);border-radius:8px';correctBox.innerHTML='<div style="font-size:.7rem;color:var(--green);letter-spacing:.1em;margin-bottom:.5rem;font-weight:700">▾ 正确顺序</div>'+ch.items.map((l,i)=>`<div style="font-size:.8rem;color:var(--text);padding:.3rem .5rem;background:var(--bg2);border-radius:4px;margin-bottom:3px"><span style="color:var(--green);margin-right:.5rem">${i+1}.</span>${escHtml(l)}</div>`).join('');wrap.appendChild(correctBox)}
+    if(ch.exp){const exp=document.createElement('div');exp.style.cssText='width:100%;margin-top:.8rem;padding:1rem;background:#D4232C15;border-left:3px solid var(--red-main);border-radius:0 8px 8px 0;font-size:.8rem;color:var(--text);line-height:1.6';exp.textContent='💡 '+ch.exp;wrap.appendChild(exp)}
+    const footer=screen.querySelector('.game-footer');const isLast=currentQ+1>=challenges.length;footer.innerHTML=`<button class="btn btn-sm btn-cyan" id="tlNext">${isLast?'查看成绩':'下一题 ▸'}</button>`;document.getElementById('tlNext').addEventListener('click',()=>{AudioEngine.play('click');currentQ++;if(currentQ<challenges.length)renderTimeline();else showResult('timeline',score,challenges.length*25)})};
+  window.resetTimeline=()=>renderTimeline();
+  renderTimeline();
+}
+// ===================== MODE 5: ERROR CORRECTION =====================
+function initError(){
+  const screen=document.getElementById('gameError');
+  const challenges=shuffle([...errorData]).slice(0,5);
+  let currentQ=0,score=0;
+  function renderError(){
+    const ch=challenges[currentQ];const selected=new Set();
+    screen.innerHTML=makeGameHeader('纠错大师','gameError',`<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`)+`<div class="game-body"><div class="errcorr-wrap"><div class="ec-desc">🔍 ${ch.desc}</div><div class="ec-editor"><div class="ec-editor-header"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#ffbd2e"></span><span class="dot" style="background:#28ca41"></span><span style="margin-left:.5rem">知识点检查</span></div><div class="ec-lines" id="ecLines" style="padding:.5rem 0"></div></div></div></div><div class="game-footer"><button class="btn btn-sm btn-cyan" id="ecSubmit">提交（点击选中有错误的条目）</button></div>`;
+    const linesEl=document.getElementById('ecLines');
+    ch.statements.forEach((stmt,i)=>{const lineEl=document.createElement('div');lineEl.className='ec-line';lineEl.innerHTML=`<span style="width:30px;text-align:right;padding-right:8px;color:#555;font-size:.8rem;flex-shrink:0">${i+1}</span><span style="font-size:.85rem;color:var(--text);line-height:1.6">${escHtml(stmt)}</span>`;
+      lineEl.addEventListener('click',()=>{AudioEngine.play('click');if(selected.has(i)){selected.delete(i);lineEl.classList.remove('selected')}else{selected.add(i);lineEl.classList.add('selected')}});linesEl.appendChild(lineEl)});
+    document.getElementById('ecSubmit').addEventListener('click',()=>{const lines=linesEl.querySelectorAll('.ec-line');let correct=true;
+      ch.errors.forEach(b=>{if(!selected.has(b)){correct=false;lines[b].classList.add('missed-bug')}else{lines[b].classList.add('correct-bug');lines[b].classList.remove('selected')}});selected.forEach(s=>{if(!ch.errors.includes(s))correct=false});
+      if(correct){AudioEngine.play('correct');score+=20;spawnParticles(window.innerWidth/2,window.innerHeight/2,'#00FF88',15)}else{AudioEngine.play('wrong');ch.errors.forEach(b=>lines[b].classList.add('correct-bug'))}
+      linesEl.querySelectorAll('.ec-line').forEach(l=>l.style.pointerEvents='none');
+      const wrap=screen.querySelector('.errcorr-wrap');const exp=document.createElement('div');exp.style.cssText='margin-top:1rem;padding:1rem;background:#D4232C15;border-left:3px solid var(--red-main);border-radius:0 8px 8px 0;font-size:.8rem;color:var(--text);line-height:1.5';exp.textContent='💡 '+ch.exp;wrap.appendChild(exp);
+      const footer=screen.querySelector('.game-footer');const isLast=currentQ+1>=challenges.length;footer.innerHTML=`<button class="btn btn-sm btn-cyan" id="ecNext">${isLast?'查看成绩':'下一题 ▸'}</button>`;document.getElementById('ecNext').addEventListener('click',()=>{AudioEngine.play('click');currentQ++;if(currentQ<challenges.length)renderError();else showResult('error',score,challenges.length*20)})});
+    showScreen('gameError');
+  }
+  renderError();
+}
+
+// ===================== MODE 6: CONCEPT CONNECTION =====================
+function initConnect(){
+  const screen=document.getElementById('gameConnect');
+  const challenges=shuffle([...connectData]).slice(0,3);
+  let currentQ=0,score=0;
+  function renderConnect(){
+    const ch=challenges[currentQ];const leftItems=ch.pairs.map(p=>p[0]);const rightItems=shuffle(ch.pairs.map(p=>p[1]));
+    let selectedLeft=null,matched=0;
+    screen.innerHTML=makeGameHeader('概念连线','gameConnect',`<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`)+`<div class="game-body"><div style="max-width:700px;width:100%"><div style="font-size:.8rem;color:var(--text2);margin-bottom:1rem;text-align:center">点击左侧概念，再点击右侧匹配项</div><div style="display:flex;gap:2rem;justify-content:center;flex-wrap:wrap"><div id="connLeft" style="display:flex;flex-direction:column;gap:.6rem;flex:1;min-width:200px"></div><div id="connRight" style="display:flex;flex-direction:column;gap:.6rem;flex:1;min-width:200px"></div></div><div id="connArea" style="margin-top:1rem"></div></div></div>`;
+    const leftEl=document.getElementById('connLeft');const rightEl=document.getElementById('connRight');
+    leftItems.forEach((item,i)=>{const el=document.createElement('div');el.className='choice-opt';el.style.cursor='pointer';el.innerHTML=`<span class="opt-label" style="color:var(--red-main)">${i+1}.</span><span>${escHtml(item)}</span>`;el.dataset.idx=i;el.addEventListener('click',()=>{if(el.style.opacity==='0.5')return;leftEl.querySelectorAll('.choice-opt').forEach(e=>e.style.borderColor='#ffffff15');el.style.borderColor='var(--red-main)';selectedLeft=i;AudioEngine.play('click')});leftEl.appendChild(el)});
+    rightItems.forEach((item,i)=>{const el=document.createElement('div');el.className='choice-opt';el.style.cursor='pointer';el.innerHTML=`<span>${escHtml(item)}</span>`;el.dataset.rIdx=i;el.addEventListener('click',()=>{if(selectedLeft===null||el.style.opacity==='0.5')return;AudioEngine.play('click');
+        const correctRight=ch.pairs[selectedLeft][1];
+        if(item===correctRight){el.classList.add('correct');el.style.opacity='0.5';leftEl.children[selectedLeft].classList.add('correct');leftEl.children[selectedLeft].style.opacity='0.5';matched++;score+=15;spawnParticles(window.innerWidth/2,window.innerHeight/2,'#00FF88');AudioEngine.play('correct');
+          if(matched===ch.pairs.length){const area=document.getElementById('connArea');const isLast=currentQ+1>=challenges.length;const nextBtn=document.createElement('button');nextBtn.className='btn btn-sm btn-cyan';nextBtn.style.cssText='margin-top:1rem';nextBtn.textContent=isLast?'查看成绩':'下一题 ▸';nextBtn.addEventListener('click',()=>{AudioEngine.play('click');currentQ++;if(currentQ<challenges.length)renderConnect();else showResult('connect',score,challenges.length*ch.pairs.length*15)});area.appendChild(nextBtn)}}
+        else{el.classList.add('wrong');AudioEngine.play('wrong');setTimeout(()=>el.classList.remove('wrong'),800)}
+        selectedLeft=null;leftEl.querySelectorAll('.choice-opt').forEach(e=>{if(e.style.opacity!=='0.5')e.style.borderColor='#ffffff15'})});rightEl.appendChild(el)});
+    showScreen('gameConnect');
+  }
+  renderConnect();
+}
+
+// ===================== MODE 7: MAZE =====================
+function initMaze(){
+  const screen=document.getElementById('gameMaze');const mazeW=13,mazeH=13;const maze=generateMaze(mazeW,mazeH);
+  let playerPos={x:1,y:1};const exitPos={x:mazeW-2,y:mazeH-2};let score=0,questionActive=false,visited=new Set();visited.add(`${playerPos.x},${playerPos.y}`);
+  const questionCells=new Set();const questions=shuffle([...mazeQData]).slice(0,5);let qIdx=0;
+  const pathCells=[];for(let y=0;y<mazeH;y++)for(let x=0;x<mazeW;x++){if(maze[y][x]===0&&!(x===1&&y===1)&&!(x===exitPos.x&&y===exitPos.y))pathCells.push({x,y})}
+  shuffle(pathCells).slice(0,questions.length).forEach(c=>questionCells.add(`${c.x},${c.y}`));
+  function renderMaze(){
+    screen.innerHTML=makeGameHeader('思想迷宫','gameMaze',`<span class="game-score">得分: ${score}</span><span style="color:var(--green);font-size:.8rem">WASD / 方向键移动</span>`)+`<div class="game-body"><div class="maze-container"><div class="maze-viewport"><div class="maze-grid-wrap"><div class="maze-grid" id="mazeGrid" style="grid-template-columns:repeat(${mazeW},40px)"></div></div></div><div class="mobile-controls"><div></div><button onclick="window._mazeMove(0,-1)">▲</button><div></div><button onclick="window._mazeMove(-1,0)">◀</button><div></div><button onclick="window._mazeMove(1,0)">▶</button><div></div><button onclick="window._mazeMove(0,1)">▼</button><div></div></div></div></div>`;
+    const grid=document.getElementById('mazeGrid');
+    for(let y=0;y<mazeH;y++)for(let x=0;x<mazeW;x++){const cell=document.createElement('div');let cls='maze-cell';if(maze[y][x]===1)cls+=' wall';else cls+=' path';if(x===playerPos.x&&y===playerPos.y)cls+=' player';if(x===exitPos.x&&y===exitPos.y)cls+=' exit';if(visited.has(`${x},${y}`)&&maze[y][x]===0)cls+=' visited';if(questionCells.has(`${x},${y}`)){cls+=' question-cell';cell.textContent='?'}cell.className=cls;grid.appendChild(cell)}
+    showScreen('gameMaze');
+  }
+  window._mazeMove=(dx,dy)=>movePlayer(dx,dy);
+  function movePlayer(dx,dy){if(questionActive)return;const nx=playerPos.x+dx,ny=playerPos.y+dy;if(nx<0||ny<0||nx>=mazeW||ny>=mazeH||maze[ny][nx]===1)return;playerPos={x:nx,y:ny};visited.add(`${nx},${ny}`);AudioEngine.play('click');
+    if(nx===exitPos.x&&ny===exitPos.y){score+=30;setTimeout(()=>showResult('maze',score,30+questions.length*15),300);return}renderMaze();
+    const key=`${nx},${ny}`;if(questionCells.has(key)&&qIdx<questions.length){questionCells.delete(key);showMazeQ(questions[qIdx++])}}
+  function showMazeQ(q){questionActive=true;const popup=document.createElement('div');popup.className='maze-question-popup';popup.innerHTML=`<h3>&#9733; 知识关卡 &#9733;</h3><div style="font-size:.85rem;color:var(--text);margin-bottom:1rem;line-height:1.5">${escHtml(q.q)}</div><div class="mq-options">${q.options.map((o,i)=>`<div class="mq-opt" data-i="${i}">${escHtml(o)}</div>`).join('')}</div><div class="mq-explain" style="display:none;margin-top:.8rem;padding:.6rem;background:#D4232C15;border-left:3px solid var(--red-main);border-radius:0 6px 6px 0;font-size:.75rem;color:var(--text);line-height:1.5"></div><div style="text-align:center;margin-top:.8rem"><button class="btn btn-sm btn-cyan" style="display:none" id="mqContinue">继续探索 ▸</button></div>`;
+    document.body.appendChild(popup);const explainEl=popup.querySelector('.mq-explain');const continueBtn=popup.querySelector('#mqContinue');
+    popup.querySelectorAll('.mq-opt').forEach(opt=>{opt.addEventListener('click',()=>{popup.querySelectorAll('.mq-opt').forEach(o=>o.style.pointerEvents='none');const correct=+opt.dataset.i===q.correct;
+        if(correct){AudioEngine.play('correct');score+=15;opt.style.borderColor='var(--green)';opt.style.background='#00ff8820'}else{AudioEngine.play('wrong');opt.style.borderColor='var(--red)';opt.style.background='#ff336620';popup.querySelectorAll('.mq-opt')[q.correct].style.borderColor='var(--green)';popup.querySelectorAll('.mq-opt')[q.correct].style.background='#00ff8810'}
+        if(q.exp){explainEl.textContent='💡 '+q.exp;explainEl.style.display='block'}continueBtn.style.display='inline-block';continueBtn.addEventListener('click',()=>{AudioEngine.play('click');popup.remove();questionActive=false;renderMaze()})})});
+  }
+  function handleKey(e){if(state.currentMode!=='maze'){document.removeEventListener('keydown',handleKey);return}const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0],W:[0,-1],S:[0,1],A:[-1,0],D:[1,0]};if(map[e.key]){e.preventDefault();movePlayer(...map[e.key])}}
+  document.addEventListener('keydown',handleKey);renderMaze();
+}
+function generateMaze(w,h){const grid=Array.from({length:h},()=>Array(w).fill(1));function carve(x,y){grid[y][x]=0;const dirs=shuffle([[0,-2],[0,2],[-2,0],[2,0]]);for(const[dx,dy]of dirs){const nx=x+dx,ny=y+dy;if(nx>0&&ny>0&&nx<w-1&&ny<h-1&&grid[ny][nx]===1){grid[y+dy/2][x+dx/2]=0;carve(nx,ny)}}}carve(1,1);grid[h-2][w-2]=0;if(grid[h-3][w-2]===1&&grid[h-2][w-3]===1)grid[h-3][w-2]=0;return grid}
+
+// ===================== MODE 8: KEYWORD SPEED TYPING =====================
+function initKeyword(){
+  const screen=document.getElementById('gameKeyword');
+  const tasks=shuffle([...keywordData]).slice(0,6);
+  let currentQ=0,score=0,history=[];
+  function renderKW(){
+    screen.innerHTML=makeGameHeader('关键词速记','gameKeyword',`<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${tasks.length}</span>`)+`<div class="game-body"><div style="max-width:600px;width:100%;background:#0a0a0f;border:1px solid #ffffff10;border-radius:8px;overflow:hidden"><div style="background:var(--surface);padding:.5rem 1rem;display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--text2)"><span style="width:8px;height:8px;border-radius:50%;background:#ff5f57"></span><span style="width:8px;height:8px;border-radius:50%;background:#ffbd2e"></span><span style="width:8px;height:8px;border-radius:50%;background:#28ca41"></span><span style="margin-left:.5rem">知识终端</span></div><div id="kwBody" style="padding:1rem;min-height:250px;max-height:400px;overflow-y:auto">${history.map(h=>`<div style="margin-bottom:.3rem;font-size:.85rem;line-height:1.5;color:${h.color||'var(--text2)'}">${escHtml(h.text)}</div>`).join('')}<div style="color:var(--cyan);font-size:.8rem;margin-bottom:.5rem;padding:.5rem;background:#00e5ff08;border-left:2px solid var(--cyan)">▸ ${tasks[currentQ].prompt}</div><div style="display:flex;align-items:center;gap:.5rem"><span style="color:var(--green);font-size:.85rem">>></span><input type="text" id="kwInput" style="flex:1;background:none;border:none;color:var(--text);font-size:.85rem;outline:none;caret-color:var(--red-main)" autocomplete="off" autocorrect="off" spellcheck="false"></div></div></div></div>`;
+    const input=document.getElementById('kwInput');input.focus();
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){AudioEngine.play('type');const val=input.value.trim();const task=tasks[currentQ];
+      const correct=val===task.answer||task.alts.some(a=>val===a)||levenshtein(val,task.answer)<=3;
+      history.push({text:`>> ${input.value}`,color:'var(--green)'});
+      if(correct){history.push({text:'✓ 正确！',color:'var(--green)'});score+=15;AudioEngine.play('correct')}else{history.push({text:`✗ 错误。正确答案: ${task.answer}`,color:'var(--red)'});if(task.exp)history.push({text:`  💡 ${task.exp}`,color:'var(--text2)'});AudioEngine.play('wrong')}
+      currentQ++;if(currentQ<tasks.length)setTimeout(renderKW,800);else setTimeout(()=>showResult('keyword',score,tasks.length*15),1000)}});
+    document.getElementById('kwBody').scrollTop=9999;showScreen('gameKeyword');setTimeout(()=>input.focus(),100);
+  }
+  renderKW();
+}
+
+// ===================== MODE 9: TRUE/FALSE JUDGE =====================
+function initJudge(){
+  const screen=document.getElementById('gameJudge');
+  const challenges=shuffle([...judgeData]).slice(0,10);
+  let currentQ=0,score=0;
+  function renderJudge(){
+    const ch=challenges[currentQ];
+    screen.innerHTML=makeGameHeader('判断正误','gameJudge',`<span class="game-score">得分: ${score}</span><span class="game-timer">${currentQ+1}/${challenges.length}</span>`)+`<div class="game-body"><div class="choice-wrap"><div class="choice-question" style="font-size:.95rem;line-height:1.7">${currentQ+1}. ${escHtml(ch.stmt)}</div><div style="display:flex;gap:1rem;justify-content:center;margin-top:1rem" id="judgeOpts"><button class="btn btn-green" id="judgeTrue" style="min-width:120px">✓ 正确</button><button class="btn" id="judgeFalse" style="min-width:120px;border-color:var(--red);color:var(--red)">✗ 错误</button></div><div id="judgeArea" style="margin-top:1rem"></div></div></div>`;
+    let answered=false;
+    function handleAnswer(userSaysTrue){if(answered)return;answered=true;
+      document.getElementById('judgeTrue').disabled=true;document.getElementById('judgeFalse').disabled=true;
+      const correct=(userSaysTrue===ch.correct);const area=document.getElementById('judgeArea');
+      if(correct){AudioEngine.play('correct');score+=10;spawnParticles(window.innerWidth/2,window.innerHeight/2,'#00FF88');
+        if(userSaysTrue)document.getElementById('judgeTrue').style.boxShadow='0 0 20px #00ff8844';else document.getElementById('judgeFalse').style.boxShadow='0 0 20px #00ff8844'}
+      else{AudioEngine.play('wrong');if(userSaysTrue){document.getElementById('judgeTrue').style.boxShadow='0 0 20px #ff336644';document.getElementById('judgeFalse').style.boxShadow='0 0 20px #00ff8844'}else{document.getElementById('judgeFalse').style.boxShadow='0 0 20px #ff336644';document.getElementById('judgeTrue').style.boxShadow='0 0 20px #00ff8844'}}
+      const fb=document.createElement('div');fb.style.cssText=`padding:.8rem;border-radius:8px;font-size:.85rem;line-height:1.5;${correct?'background:#00ff8810;border:1px solid var(--green);color:var(--green)':'background:#ff336610;border:1px solid var(--red);color:var(--red)'}`;fb.textContent=correct?'✓ 回答正确！':'✗ 回答错误';area.appendChild(fb);
+      if(ch.exp){const exp=document.createElement('div');exp.style.cssText='margin-top:.5rem;padding:.8rem;background:#D4232C15;border-left:3px solid var(--red-main);border-radius:0 8px 8px 0;font-size:.8rem;color:var(--text);line-height:1.5';exp.textContent='💡 '+ch.exp;area.appendChild(exp)}
+      const isLast=currentQ+1>=challenges.length;const nextBtn=document.createElement('button');nextBtn.className='btn btn-sm btn-cyan';nextBtn.style.marginTop='.8rem';nextBtn.textContent=isLast?'查看成绩':'下一题 ▸';nextBtn.addEventListener('click',()=>{AudioEngine.play('click');currentQ++;if(currentQ<challenges.length)renderJudge();else showResult('judge',score,challenges.length*10)});area.appendChild(nextBtn)}
+    document.getElementById('judgeTrue').addEventListener('click',()=>handleAnswer(true));document.getElementById('judgeFalse').addEventListener('click',()=>handleAnswer(false));
+    showScreen('gameJudge');
+  }
+  renderJudge();
+}
+// ===================== MODE 10: FINAL EXAM =====================
+function initExam(){
+  const screen=document.getElementById('gameExam');
+  const pool=shuffle([...examPool]).slice(0,25);
+  let currentQ=0,score=0,totalQ=pool.length;const passScore=Math.ceil(totalQ*0.6);
+  function renderExam(){
+    const ch=pool[currentQ];const pct=((currentQ)/totalQ*100).toFixed(0);
+    let bodyHtml='';
+    if(ch.type==='choice'){
+      const labels=['A','B','C','D'];
+      bodyHtml=`<div class="choice-question">${currentQ+1}/${totalQ}. ${escHtml(ch.q)}</div><div class="choice-options" id="examOpts">${ch.opts.map((o,i)=>`<div class="choice-opt" data-i="${i}"><span class="opt-label">${labels[i]}.</span><span>${escHtml(o)}</span></div>`).join('')}</div>`;
+    }else if(ch.type==='judge'){
+      bodyHtml=`<div class="choice-question" style="line-height:1.7">${currentQ+1}/${totalQ}. 判断正误：${escHtml(ch.stmt)}</div><div style="display:flex;gap:1rem;justify-content:center;margin-top:1rem" id="examOpts"><button class="btn btn-green exam-judge-btn" data-v="true" style="min-width:120px">✓ 正确</button><button class="btn exam-judge-btn" data-v="false" style="min-width:120px;border-color:var(--red);color:var(--red)">✗ 错误</button></div>`;
+    }else if(ch.type==='maze'){
+      bodyHtml=`<div class="choice-question">${currentQ+1}/${totalQ}. ${escHtml(ch.q)}</div><div class="choice-options" id="examOpts">${ch.options.map((o,i)=>`<div class="choice-opt" data-i="${i}"><span class="opt-label">${['A','B','C','D'][i]}.</span><span>${escHtml(o)}</span></div>`).join('')}</div>`;
+    }
+    screen.innerHTML=makeGameHeader('期末模拟考试','gameExam',`<span class="game-score">得分: ${score}/${currentQ}</span><span class="game-timer">及格线: ${passScore}分</span>`)+`<div class="game-body"><div class="exam-wrap"><div class="exam-progress"><div class="exam-progress-bar" style="width:${pct}%"></div></div>${bodyHtml}<div id="examArea" style="margin-top:1rem"></div></div></div>`;
+    const area=document.getElementById('examArea');
+    if(ch.type==='choice'){
+      document.querySelectorAll('#examOpts .choice-opt').forEach(opt=>{opt.addEventListener('click',()=>{document.querySelectorAll('#examOpts .choice-opt').forEach(el=>el.style.pointerEvents='none');const i=+opt.dataset.i;
+          if(i===ch.ans){opt.classList.add('correct');score++;AudioEngine.play('correct')}else{opt.classList.add('wrong');AudioEngine.play('wrong');document.querySelectorAll('#examOpts .choice-opt')[ch.ans].classList.add('correct')}
+          if(ch.exp)addExpToArea(area,ch.exp);addExamNext(area)})});
+    }else if(ch.type==='judge'){
+      document.querySelectorAll('.exam-judge-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.exam-judge-btn').forEach(b=>b.disabled=true);
+          const userTrue=(btn.dataset.v==='true');const correct=(userTrue===ch.correct);
+          if(correct){score++;AudioEngine.play('correct');btn.style.boxShadow='0 0 20px #00ff8844'}else{AudioEngine.play('wrong');btn.style.boxShadow='0 0 20px #ff336644'}
+          if(ch.exp)addExpToArea(area,ch.exp);addExamNext(area)})});
+    }else if(ch.type==='maze'){
+      document.querySelectorAll('#examOpts .choice-opt').forEach(opt=>{opt.addEventListener('click',()=>{document.querySelectorAll('#examOpts .choice-opt').forEach(el=>el.style.pointerEvents='none');const i=+opt.dataset.i;
+          if(i===ch.correct){opt.classList.add('correct');score++;AudioEngine.play('correct')}else{opt.classList.add('wrong');AudioEngine.play('wrong');document.querySelectorAll('#examOpts .choice-opt')[ch.correct].classList.add('correct')}
+          if(ch.exp)addExpToArea(area,ch.exp);addExamNext(area)})});
+    }
+    showScreen('gameExam');
+  }
+  function addExpToArea(area,text){const exp=document.createElement('div');exp.style.cssText='padding:.6rem;background:#D4232C15;border-left:3px solid var(--red-main);border-radius:0 6px 6px 0;font-size:.75rem;color:var(--text);line-height:1.5';exp.textContent='💡 '+text;area.appendChild(exp)}
+  function addExamNext(area){const isLast=currentQ+1>=totalQ;const nextBtn=document.createElement('button');nextBtn.className='btn btn-sm btn-cyan';nextBtn.style.marginTop='.6rem';nextBtn.textContent=isLast?'查看考试结果':'下一题 ▸';nextBtn.addEventListener('click',()=>{AudioEngine.play('click');currentQ++;if(currentQ<totalQ)renderExam();else showExamResult()});area.appendChild(nextBtn)}
+  function showExamResult(){
+    const passed=score>=passScore;const pct=Math.round(score/totalQ*100);
+    if(passed){state.examPassed=true;state.stars.exam=pct>=90?3:pct>=75?2:1;state.totalScore+=score*2;saveState()}
+    screen.innerHTML=makeGameHeader('考试结果','gameExam','')+`<div class="game-body"><div class="exam-result-card ${passed?'exam-pass':'exam-fail'}"><div style="font-size:3rem;margin-bottom:.5rem">${passed?'🎓':'📚'}</div><div class="exam-label">最终得分</div><div class="exam-score-big" style="color:${passed?'var(--green)':'var(--red)'}">${score} / ${totalQ}</div><div style="font-size:1.2rem;margin:.5rem 0;color:${passed?'var(--gold)':'var(--text2)'}">${pct}分 · 正确率 ${pct}%</div><div style="font-size:.9rem;margin:.8rem 0;padding:.8rem;border-radius:8px;${passed?'background:#00ff8815;color:var(--green)':'background:#ff336615;color:var(--red)'}">及格线：${Math.round(passScore/totalQ*100)}分（${passScore}/${totalQ}题）</div><div style="font-size:1.5rem;font-weight:900;margin:.5rem 0;color:${passed?'var(--gold)':'var(--red)'}"> ${passed?'🎉 恭喜通过！预测考试合格！':'😤 未通过，继续复习！'}</div>${passed?`<div style="font-size:.8rem;color:var(--text2);margin-top:.5rem">按照当前掌握程度，考试通过概率约 <span style="color:var(--gold);font-weight:700">${Math.min(99,pct+Math.floor(Math.random()*10))}%</span></div>`:`<div style="font-size:.8rem;color:var(--text2);margin-top:.5rem">建议回到各关卡继续复习薄弱环节，再来挑战！</div>`}<div style="display:flex;gap:1rem;margin-top:1.5rem;justify-content:center"><button class="btn btn-sm" onclick="goHub()">返回大厅</button><button class="btn btn-sm btn-cyan" onclick="initExam()">重新考试</button></div></div></div>`;
+    showScreen('gameExam');
+    if(passed){AudioEngine.play('star');spawnParticles(window.innerWidth/2,window.innerHeight/3,'#FFD700',30)}
+  }
+  renderExam();
+}
+// ===================== HUB RING DRAG ROTATION =====================
+(function(){
+  const ring=document.getElementById('hubRing');
+  let currentAngle=0,targetAngle=0,velocity=0;
+  let isDragging=false,startX=0,dragStartAngle=0;
+  const friction=0.95,autoSpeed=0.15,sensitivity=0.4;
+  let autoRotate=true,autoTimer=null,rafId=null;
+  let autoDirection=1,lastDragDir=0;
+
+  function setAngle(deg){
+    currentAngle=deg;
+    ring.style.transform=`rotateX(-15deg) rotateY(${deg}deg)`;
+    const portals=ring.querySelectorAll('.portal');
+    portals.forEach(p=>{
+      const px=p.dataset.posX, pz=p.dataset.posZ;
+      if(px!==undefined){
+        p.style.transform=`translate(-50%,-50%) translateX(${px}px) translateZ(${pz}px) rotateY(${-deg}deg)`;
+      }
+    });
+  }
+
+  function animate(){
+    if(!isDragging){
+      if(autoRotate){
+        currentAngle+=autoSpeed*autoDirection;
+        setAngle(currentAngle);
+      }else{
+        velocity*=friction;
+        if(Math.abs(velocity)<0.05){autoDirection=lastDragDir||autoDirection;velocity=0;autoRotate=true;}
+        currentAngle+=velocity;
+        setAngle(currentAngle);
+      }
+    }
+    rafId=requestAnimationFrame(animate);
+  }
+
+  function getX(e){
+    if(e.touches&&e.touches.length)return e.touches[0].clientX;
+    return e.clientX;
+  }
+
+  function onStart(e){
+    isDragging=true;
+    autoRotate=false;
+    clearTimeout(autoTimer);
+    startX=getX(e);
+    dragStartAngle=currentAngle;
+    velocity=0;
+    ring.classList.add('dragging');
+    e.preventDefault();
+  }
+
+  function onMove(e){
+    if(!isDragging)return;
+    const dx=getX(e)-startX;
+    const newAngle=dragStartAngle+dx*sensitivity;
+    velocity=newAngle-currentAngle;
+    if(Math.abs(velocity)>0.01)lastDragDir=velocity>0?1:-1;
+    currentAngle=newAngle;
+    setAngle(currentAngle);
+    e.preventDefault();
+  }
+
+  function onEnd(){
+    if(!isDragging)return;
+    isDragging=false;
+    ring.classList.remove('dragging');
+    autoTimer=setTimeout(()=>{autoRotate=true;},4000);
+  }
+
+  ring.addEventListener('mousedown',onStart);
+  window.addEventListener('mousemove',onMove);
+  window.addEventListener('mouseup',onEnd);
+  ring.addEventListener('touchstart',onStart,{passive:false});
+  window.addEventListener('touchmove',onMove,{passive:false});
+  window.addEventListener('touchend',onEnd);
+
+  animate();
+})();
+// ===================== UTILITY =====================
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function levenshtein(a,b){const m=a.length,n=b.length;const d=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){const cost=a[i-1]===b[j-1]?0:1;d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+cost)}return d[m][n]}
+// Splash active via HTML class
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
