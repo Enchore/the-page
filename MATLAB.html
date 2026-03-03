@@ -237,7 +237,7 @@ canvas#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;poi
 }
 
 /* ===== SCANLINE OVERLAY ===== */
-body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none !important;background:repeating-linear-gradient(0deg,transparent,transparent 2px,#00000008 2px,#00000008 4px);opacity:.3;touch-action:none}
+body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none !important;background:repeating-linear-gradient(0deg,transparent,transparent 2px,#00000008 2px,#00000008 4px);opacity:.3}
 
 /* ===== GLOW PULSE FOR ACTIVE ELEMENTS ===== */
 @keyframes glowPulse{0%,100%{box-shadow:0 0 5px var(--orange-glow)}50%{box-shadow:0 0 20px var(--orange-glow),0 0 40px #ff660022}}
@@ -2954,6 +2954,7 @@ function initEndless() {
   const friction=0.95,autoSpeed=0.15,sensitivity=0.4;
   let autoRotate=true,autoTimer=null,rafId=null;
   let autoDirection=1,lastDragDir=0;
+  let touchMoved=false,touchStartTarget=null;
 
   function setAngle(deg){
     currentAngle=deg;
@@ -2995,25 +2996,38 @@ function initEndless() {
     startX=getX(e);
     dragStartAngle=currentAngle;
     velocity=0;
+    touchMoved=false;
+    touchStartTarget=e.target;
     ring.classList.add('dragging');
-    e.preventDefault();
+    // Don't preventDefault on touchstart — let the browser track the tap
+    if(e.type==='mousedown') e.preventDefault();
   }
 
   function onMove(e){
     if(!isDragging)return;
     const dx=getX(e)-startX;
+    if(Math.abs(dx)>8) touchMoved=true;
     const newAngle=dragStartAngle+dx*sensitivity;
     velocity=newAngle-currentAngle;
     if(Math.abs(velocity)>0.01)lastDragDir=velocity>0?1:-1;
     currentAngle=newAngle;
     setAngle(currentAngle);
-    e.preventDefault();
+    if(touchMoved) e.preventDefault();
   }
 
-  function onEnd(){
+  function onEnd(e){
     if(!isDragging)return;
     isDragging=false;
     ring.classList.remove('dragging');
+    // If touch didn't move, it's a tap — trigger click on the target portal
+    if(!touchMoved && e.type==='touchend' && touchStartTarget){
+      const portal=touchStartTarget.closest('.portal');
+      if(portal && !portal.classList.contains('locked')){
+        e.preventDefault();
+        portal.click();
+        return;
+      }
+    }
     autoTimer=setTimeout(()=>{autoRotate=true;},4000);
   }
 
@@ -3044,6 +3058,7 @@ function escHtml(s) {
 // ===================== INIT =====================
 // Splash is set active via HTML class, no additional init needed
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v67327c56f0bb4ef8b305cae61679db8f1769101564043" integrity="sha512-rdcWY47ByXd76cbCFzznIcEaCN71jqkWBBqlwhF1SY7KubdLKZiEGeP7AyieKZlGP9hbY/MhGrwXzJC/HulNyg==" data-cf-beacon='{"version":"2024.11.0","token":"75124c326cb447fe934cde04713ae013","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
